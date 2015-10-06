@@ -29,6 +29,11 @@ Use Amazon EFS (NFS) to store a common home directory across all EC2 instances.
 But also allow using SSD local storage where possible.
 This is basically all just cloud-init config.
 
-Use tags to identify EC2 instances; somehow link those to running SSH processes or something, and sweep them up as necessary.
+Ansible to manage host setup and reconfiguration on startup, pulled from some central repo.
+
+EC2 instances should automatically shut themselves down at the end of their billing cycle if there are no inbound SSH connections.
+
+Use elastic IPs to set up fixed hostnames both for SSH'ing and for webdev.
 
 Can this get mixed in with `dev` somehow?  So ~/.devrc defining a bunch of projects with host and path (host can be localhost, or some spec - should be extensible).  `dev proj FOO` starts project FOO.
+
