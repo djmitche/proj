@@ -1,0 +1,34 @@
+Goals
+-----
+ - set up a project environment with a simple command like `proj moz`
+   - shell environment
+   - EC2 instance started if necessary
+ - manage resources
+   - shut down EC2 instances when all projects on that instance are done
+
+Plan
+----
+ - run this on a VPS somewhere
+ - start/stop EC2 instances for major projects
+   - buildbot
+     - test dir on SSD
+   - mozilla
+     - objdirs on SSD
+     - docker storage on SSD
+   - other
+
+Notes
+-----
+
+Multiple projects may share the same EC2 instance - (moz, sysadmins, fwunit) for example
+
+Ideas
+-----
+
+Use Amazon EFS (NFS) to store a common home directory across all EC2 instances.
+But also allow using SSD local storage where possible.
+This is basically all just cloud-init config.
+
+Use tags to identify EC2 instances; somehow link those to running SSH processes or something, and sweep them up as necessary.
+
+Can this get mixed in with `dev` somehow?  So ~/.devrc defining a bunch of projects with host and path (host can be localhost, or some spec - should be extensible).  `dev proj FOO` starts project FOO.
