@@ -1,0 +1,6 @@
+children:
+  m-c:
+    cd: m-c
+    proj_cfg: m-c_proj.yml
+  tc:
+    cd: tc

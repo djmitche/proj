@@ -51,4 +51,6 @@ Each has a script to "enter"; that enters the next level with that context
 
 Sort of like 'cd', but without '..' (?)
 
-Each level an instance of a go script of some sort; config in YAML files
+Each level an instance of a go script of some sort; config in YAML files (.proj.yml?)
+
+Keep in mind there may be multple paths to the same app (e.g., on laptop or on server)
