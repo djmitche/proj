@@ -48,3 +48,7 @@ Each has a script to "enter"; that enters the next level with that context
   enter_ec2_instance i-abcdefg
 `moz/tc`:
   enter_docker_instance taskcluster-devel
+
+Sort of like 'cd', but without '..' (?)
+
+Each level an instance of a go script of some sort; config in YAML files
