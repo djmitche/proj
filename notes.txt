@@ -16,6 +16,7 @@ Plan
      - objdirs on SSD
      - docker storage on SSD
    - other
+ - Also want to start docker instances as necessary
 
 Notes
 -----
@@ -37,3 +38,13 @@ Use elastic IPs to set up fixed hostnames both for SSH'ing and for webdev.
 
 Can this get mixed in with `dev` somehow?  So ~/.devrc defining a bunch of projects with host and path (host can be localhost, or some spec - should be extensible).  `dev proj FOO` starts project FOO.
 
+Nested project definitions:
+  moz/tc/tools
+  buildbot
+  bits/exchanger
+Each has a script to "enter"; that enters the next level with that context
+
+`moz`:
+  enter_ec2_instance i-abcdefg
+`moz/tc`:
+  enter_docker_instance taskcluster-devel
