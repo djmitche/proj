@@ -4,4 +4,4 @@ enter:
 children:
   auth:
     cd: auth
-    proj_cfg: auth_proj.yml
+    # note: this may find the proj config at auth_proj.yml or auth/.proj.yml

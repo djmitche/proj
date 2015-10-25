@@ -2,9 +2,13 @@
 children:
   bits:
     cd: ~/code/bits
+  bb-docker:
+    cd: ~/code/buildbot/t/buildbot-dev-image
   buildbot:
-    docker: buildbot-dev
-    dir: ~/code/buildbot
+    docker:
+      image-id: djmitche/buildbot-dev:latest
+      dir: ~/code/buildbot
   moz:
-    ec2-instance: i-123456
-    dir: ~/code/moz
+    ec2-instance:
+      instance-id: i-123456
+      dir: ~/code/moz

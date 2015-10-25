@@ -1,0 +1,11 @@
+Proj runs a shell in an "environment" specified by a "path", each step of which specifies a new "child" environment of the previous envrionment.  An environment encapsulates a host, a directory, and various bits of state such as shell aliases or PATH entries) defined and interpreted by plugins.
+
+Environments are built by beginning in the current environment and successively "entering" each step's environment.
+
+When entering a new environment, all of that environment's entry hooks are executed.  To move from that environment into a child environment, proj indexes the step name in the current environment config and uses the specified jump method to start the child environment.  Some jump methods connect to an external host, in which case some context from parent environments might be lost.
+
+When the path is exhausted, proj starts a shell session in the final environment, based on the entry hooks executed along the way.
+
+Each environment's configuration is defined either by a `.proj.yml` file in the environment directory, or a sibling to the directory named DIR_proj.yml.
+
+Global proj configuration is kept in ~/.projrc, which includes AWS credentials, .  Proj itself is assumed to be in the path.  It is a statically-linked go application, with all hooks and commands included.
