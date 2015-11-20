@@ -8,12 +8,58 @@ import (
 
 /* child handling */
 
+type Child interface {
+	ParseArgs(args yaml.Node)
+	Start(config Config, context Context, path string)
+}
+
+type cdChild struct {
+	dir        string
+	env_config string
+}
+
+func (child *cdChild) ParseArgs(args yaml.Node) {
+	node, err := default_child(args, "dir")
+	if err != nil {
+		log.Panic(err)
+	}
+	child.dir = node_string(node)
+
+	node, err = yaml.Child(args, "config")
+	if err == nil {
+		child.env_config = node_string(node)
+	}
+}
+
+func (child *cdChild) Start(config Config, context Context, path string) {
+	err := os.Chdir(child.dir)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	// re-run from the top, in the same process
+	run(context, child.env_config, path)
+}
+
+func NewChild(child_type string) Child {
+	// TODO: use a map and functors
+	if child_type == "cd" {
+		return &cdChild{}
+	} else {
+		log.Fatalf("No such child type %s", child_type)
+	}
+	return nil
+}
+
+// Utility function to re-execute proj in the new environment
+// TODO: unused
 func local_reexec(context Context, path string) {
 	log.Printf("running %s", os.Args[0])
 
 	// Fork a new child, then write out the context and exit.  This results
 	// in a rapid cascade of sub-processes, with ppid=1, but Go doesn't allow
 	// raw forks, it seems. (TODO)
+	// TODO: just re-run Main?
 	r, w, err := os.Pipe()
 	if err != nil {
 		log.Panic(err)
@@ -40,42 +86,8 @@ func local_reexec(context Context, path string) {
 	os.Exit(0)
 }
 
-// utility function to get a child of a YAML node, or if the YAML node is not a
-// Map, assume that it is the expected value.  This allows things like "cd:
-// somedir" as a shorthand for "cd: dir: somedir".
-func default_child(args yaml.Node, key string) (yaml.Node, error) {
-	_, ok := args.(yaml.Map)
-	if !ok {
-		return args, nil
-	} else {
-		return yaml.Child(args, key)
-	}
-}
-
-func start_child_cd(config Config, context Context, child ConfigElt, path string) {
-	// TODO: handle Args being a string
-	dir_node, err := default_child(child.Args, "dir")
-	if err != nil {
-		log.Panic(err)
-	}
-	// TODO: handle not a scalar
-	dir_scalar, ok := dir_node.(yaml.Scalar)
-	if !ok {
-		log.Panic("invalid directory %#v", dir_node)
-	}
-	dir := dir_scalar.String()
-
-	// TODO: handle 'config' option, sending --env-config
-
-	err = os.Chdir(dir)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	local_reexec(context, path)
-}
-
-func start_child(config Config, context Context, elt string, path string) {
+// Start the child named by `elt`
+func StartChild(config Config, context Context, elt string, path string) {
 	log.Printf("start_child(%+v, %+v, %+v, %+v)\n", config, context, elt, path)
 	child, ok := config.Children[elt]
 	if !ok {
@@ -85,9 +97,5 @@ func start_child(config Config, context Context, elt string, path string) {
 	// add the element to the context to be handed to the child
 	context.Path = append(context.Path, elt)
 
-	if child.Type == "cd" {
-		start_child_cd(config, context, child, path)
-	} else {
-		log.Panic("unknown child or child type")
-	}
+	child.Start(config, context, path)
 }

@@ -10,22 +10,15 @@ import (
 
 /* Config handling */
 
-type ConfigElt struct {
-	Type string
-	Args yaml.Node
-}
-
 type Config struct {
-	Filename string
-	Children map[string]ConfigElt
-	Contexts []ConfigElt
-
-	raw yaml.Node
+	Filename  string
+	Children  map[string]Child
+	Modifiers []interface{}
 }
 
 func (c Config) String() string {
-	return fmt.Sprintf("{\n    Filename: %#v\n    Children: %#v\n    Contexts: %#v\n}",
-		c.Filename, c.Children, c.Contexts)
+	return fmt.Sprintf("{\n    Filename: %#v\n    Children: %#v\n    Modifiers: %#v\n}",
+		c.Filename, c.Children, c.Modifiers)
 }
 
 func load_config(env_config string) Config {
@@ -57,11 +50,11 @@ func load_config(env_config string) Config {
 	if err != nil {
 		log.Panic(err)
 	}
-	config.raw = file.Root
+	root := file.Root
 
 	// parse children
-	config.Children = make(map[string]ConfigElt)
-	child_node, err := yaml.Child(config.raw, ".children")
+	config.Children = make(map[string]Child)
+	child_node, err := yaml.Child(root, ".children")
 	if err == nil {
 		for name, value := range child_node.(yaml.Map) {
 			val_map := value.(yaml.Map)
@@ -69,31 +62,24 @@ func load_config(env_config string) Config {
 				log.Panic("malformed configuration 1")
 			}
 			for typ, args := range val_map {
-				config.Children[name] = ConfigElt{
-					Type: typ,
-					Args: args}
+				child := NewChild(typ)
+				child.ParseArgs(args)
+				config.Children[name] = child
 			}
 		}
 	}
 
-	// parse contexts
-	contexts_node, err := yaml.Child(config.raw, ".context")
+	// parse shell modifiers
+	contexts_node, err := yaml.Child(root, ".shell")
 	if err == nil {
-		contexts_list := contexts_node.(yaml.List)
-		config.Contexts = make([]ConfigElt, len(contexts_list))
-		for i, ctx := range contexts_list {
-			ctx_map := ctx.(yaml.Map)
-			if len(ctx_map) != 1 {
-				log.Panic("malformed configuration 2")
-			}
-			for typ, args := range ctx_map {
-				config.Contexts[i] = ConfigElt{
-					Type: typ,
-					Args: args}
-			}
+		yaml_list := contexts_node.(yaml.List)
+		contexts := make([]interface{}, yaml_list.Len())
+		for i, elt := range yaml_list {
+			contexts[i] = yaml_to_json(elt)
 		}
+		config.Modifiers = contexts
 	} else {
-		config.Contexts = make([]ConfigElt, 0)
+		config.Modifiers = make([]interface{}, 0)
 	}
 
 	return config

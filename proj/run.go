@@ -8,11 +8,12 @@ import (
 
 /* main */
 
-func run(cfd int, env_config string, path string) {
+func run(context Context, env_config string, path string) {
+	log.Printf("run(%#v, %#v, %#v)", context, env_config, path)
 	config := load_config(env_config)
-	context := load_context(cfd)
 
-	// TODO: update context based on config
+	// incorporate the configuration into the accumulated context
+	context.Update(config)
 
 	// either start a shell or enter the next path element
 	if len(path) == 0 {
@@ -20,9 +21,9 @@ func run(cfd int, env_config string, path string) {
 	} else {
 		i := strings.Index(path, "/")
 		if i < 0 {
-			start_child(config, context, path, "")
+			StartChild(config, context, path, "")
 		} else {
-			start_child(config, context, path[:i], path[i+1:])
+			StartChild(config, context, path[:i], path[i+1:])
 		}
 	}
 }
@@ -40,5 +41,6 @@ func Main() {
 
 	path := args[0]
 
-	run(*cfd, *env_config, path)
+	context := load_context(*cfd)
+	run(context, *env_config, path)
 }
