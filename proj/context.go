@@ -19,6 +19,10 @@ type Modifier interface {
 	Apply(shell Shell)
 }
 
+type modifierFactory func(interface{}) Modifier
+
+var modifierFactories map[string]modifierFactory = make(map[string]modifierFactory)
+
 type modifier struct {
 	raw interface{}
 }
@@ -55,17 +59,22 @@ func (mod *envModifier) Apply(shell Shell) {
 	}
 }
 
+func init() {
+	modifierFactories["env"] = newEnvModifier
+}
+
 func new_modifier(raw interface{}) Modifier {
 	as_map, ok := raw.(map[string]interface{})
 	if !ok || len(as_map) != 1 {
 		log.Fatalf("Invalid shell modifier %j", raw)
 	}
+	// TODO: some util to validate and read out a one-key map as k, v
 	for mod_type, args := range as_map {
-		if mod_type == "env" {
-			return newEnvModifier(args)
-		} else {
+		factory, ok := modifierFactories[mod_type]
+		if !ok {
 			log.Fatal("unknown modifier type %s", mod_type)
 		}
+		return factory(args)
 	}
 	return nil
 }

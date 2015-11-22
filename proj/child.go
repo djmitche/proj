@@ -13,6 +13,10 @@ type Child interface {
 	Start(config Config, context Context, path string)
 }
 
+type childFactory func() Child
+
+var childFactories map[string]childFactory = make(map[string]childFactory)
+
 type cdChild struct {
 	dir        string
 	env_config string
@@ -41,14 +45,16 @@ func (child *cdChild) Start(config Config, context Context, path string) {
 	run(context, child.env_config, path)
 }
 
+func init() {
+	childFactories["cd"] = func() Child { return &cdChild{} }
+}
+
 func NewChild(child_type string) Child {
-	// TODO: use a map and functors
-	if child_type == "cd" {
-		return &cdChild{}
-	} else {
+	factory, ok := childFactories[child_type]
+	if !ok {
 		log.Fatalf("No such child type %s", child_type)
 	}
-	return nil
+	return factory()
 }
 
 // Utility function to re-execute proj in the new environment
