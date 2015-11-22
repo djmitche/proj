@@ -1,6 +1,7 @@
 package proj
 
 import (
+	"errors"
 	"github.com/kylelemons/go-gypsy/yaml"
 	"log"
 )
@@ -28,7 +29,7 @@ func yaml_to_json(node yaml.Node) interface{} {
 	}
 }
 
-// utility function to get a child of a YAML node, or if the YAML node is not a
+// Utility function to get a child of a YAML node, or if the YAML node is not a
 // Map, assume that it is the expected value.  This allows things like "cd:
 // somedir" as a shorthand for "cd: dir: somedir".
 func default_child(args yaml.Node, key string) (yaml.Node, error) {
@@ -47,4 +48,17 @@ func node_string(node yaml.Node) string {
 		log.Fatalf("Expected a string, got %#v", node)
 	}
 	return scalar.String()
+}
+
+// Expect a JSON map with a single key and break that out into the key and its
+// value.  This is a common structure in YAML files.
+func singleKeyMap(input interface{}) (string, interface{}, error) {
+	input_map, ok := input.(map[string]interface{})
+	if !ok || len(input_map) != 1 {
+		return "", nil, errors.New("expected a single-propery object")
+	}
+	for key, args := range input_map {
+		return key, args, nil
+	}
+	return "", nil, nil
 }

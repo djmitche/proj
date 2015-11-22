@@ -64,19 +64,15 @@ func init() {
 }
 
 func new_modifier(raw interface{}) Modifier {
-	as_map, ok := raw.(map[string]interface{})
-	if !ok || len(as_map) != 1 {
-		log.Fatalf("Invalid shell modifier %j", raw)
+	mod_type, args, err := singleKeyMap(raw)
+	if err != nil {
+		log.Fatal(err)
 	}
-	// TODO: some util to validate and read out a one-key map as k, v
-	for mod_type, args := range as_map {
-		factory, ok := modifierFactories[mod_type]
-		if !ok {
-			log.Fatal("unknown modifier type %s", mod_type)
-		}
-		return factory(args)
+	factory, ok := modifierFactories[mod_type]
+	if !ok {
+		log.Fatal("unknown modifier type %s", mod_type)
 	}
-	return nil
+	return factory(args)
 }
 
 // update a context based on a configuration; this amounts to appending the
