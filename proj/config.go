@@ -50,34 +50,36 @@ func load_config(env_config string) Config {
 	if err != nil {
 		log.Panic(err)
 	}
-	root := file.Root
+
+	cfg_file := yaml_to_json(file.Root)
+	cfg_map, ok := cfg_file.(map[string]interface{})
+	if !ok {
+		log.Panic(err)
+	}
 
 	// parse children
 	config.Children = make(map[string]Child)
-	child_node, err := yaml.Child(root, ".children")
-	if err == nil {
-		for name, value := range child_node.(yaml.Map) {
-			val_map := value.(yaml.Map)
-			if len(val_map) != 1 {
-				log.Panic("malformed configuration 1")
+	children_node, ok := cfg_map["children"]
+	if ok {
+		children_map, ok := children_node.(map[string]interface{})
+		if !ok {
+			log.Fatal("`children` must be a map")
+		}
+		for name, value := range children_map {
+			child_type, args, err := singleKeyMap(value)
+			if err != nil {
+				log.Panic(err)
 			}
-			for typ, args := range val_map {
-				child := NewChild(typ)
-				child.ParseArgs(args)
-				config.Children[name] = child
-			}
+			child := NewChild(child_type)
+			child.ParseArgs(args)
+			config.Children[name] = child
 		}
 	}
 
 	// parse shell modifiers
-	contexts_node, err := yaml.Child(root, ".shell")
-	if err == nil {
-		yaml_list := contexts_node.(yaml.List)
-		contexts := make([]interface{}, yaml_list.Len())
-		for i, elt := range yaml_list {
-			contexts[i] = yaml_to_json(elt)
-		}
-		config.Modifiers = contexts
+	shell_node, ok := cfg_map["shell"]
+	if ok {
+		config.Modifiers = shell_node.([]interface{})
 	} else {
 		config.Modifiers = make([]interface{}, 0)
 	}

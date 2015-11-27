@@ -1,7 +1,6 @@
 package proj
 
 import (
-	"github.com/kylelemons/go-gypsy/yaml"
 	"log"
 	"os"
 )
@@ -9,7 +8,7 @@ import (
 /* child handling */
 
 type Child interface {
-	ParseArgs(args yaml.Node)
+	ParseArgs(args interface{})
 	Start(config Config, context Context, path string)
 }
 
@@ -22,16 +21,27 @@ type cdChild struct {
 	env_config string
 }
 
-func (child *cdChild) ParseArgs(args yaml.Node) {
-	node, err := default_child(args, "dir")
-	if err != nil {
-		log.Panic(err)
+func (child *cdChild) ParseArgs(args interface{}) {
+	node, ok := default_child(args, "dir")
+	if !ok {
+		log.Panic("no dir specified")
 	}
-	child.dir = node_string(node)
+	child.dir, ok = node.(string)
+	if !ok {
+		log.Panic("child dir is not a string")
+	}
 
-	node, err = yaml.Child(args, "config")
-	if err == nil {
-		child.env_config = node_string(node)
+	args_map, ok := args.(map[string]interface{})
+	if ok {
+		config_arg, ok := args_map["config"]
+		if ok {
+			config_arg_str, ok := config_arg.(string)
+			if ok {
+				child.env_config = config_arg_str
+			} else {
+				log.Panic("config should be a string")
+			}
+		}
 	}
 }
 

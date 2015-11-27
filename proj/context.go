@@ -66,7 +66,7 @@ func init() {
 func new_modifier(raw interface{}) Modifier {
 	mod_type, args, err := singleKeyMap(raw)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 	factory, ok := modifierFactories[mod_type]
 	if !ok {

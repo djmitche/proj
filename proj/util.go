@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-// Convert a YAML parse into data structures that would be produced by
+// Convert a JSON parse into data structures that would be produced by
 // encodings/json
 func yaml_to_json(node yaml.Node) interface{} {
 	if scalar, ok := node.(yaml.Scalar); ok {
@@ -29,25 +29,26 @@ func yaml_to_json(node yaml.Node) interface{} {
 	}
 }
 
-// Utility function to get a child of a YAML node, or if the YAML node is not a
+// Utility function to get a child of a JSON node, or if the JSON node is not a
 // Map, assume that it is the expected value.  This allows things like "cd:
 // somedir" as a shorthand for "cd: dir: somedir".
-func default_child(args yaml.Node, key string) (yaml.Node, error) {
-	_, ok := args.(yaml.Map)
+func default_child(args interface{}, key string) (interface{}, bool) {
+	m, ok := args.(map[string]interface{})
 	if !ok {
-		return args, nil
+		return args, true
 	} else {
-		return yaml.Child(args, key)
+		rv, ok := m[key]
+		return rv, ok
 	}
 }
 
-// Utility function to extract the string value of a YAML node
-func node_string(node yaml.Node) string {
-	scalar, ok := node.(yaml.Scalar)
+// Utility function to extract the string value of a JSON node
+func node_string(node interface{}) string {
+	str, ok := node.(string)
 	if !ok {
 		log.Fatalf("Expected a string, got %#v", node)
 	}
-	return scalar.String()
+	return str
 }
 
 // Expect a JSON map with a single key and break that out into the key and its
