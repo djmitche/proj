@@ -1,7 +1,0 @@
-enter:
-  - nvm-install: node-0.12
-  - add_path: node_modules/.bin
-children:
-  auth:
-    cd: auth
-    # note: this may find the proj config at auth_proj.yml or auth/.proj.yml

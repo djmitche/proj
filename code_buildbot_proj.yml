@@ -1,9 +1,0 @@
-enter:
-  - bash_source: .bashrc
-children:
-  buildbot:
-    cd: t/buildbot
-    proj_cfg: t/buildbot_proj.yml
-  bbinfra:
-    cd: t/bbinfra
-    proj_cfg: t/bbinfra_proj.yml

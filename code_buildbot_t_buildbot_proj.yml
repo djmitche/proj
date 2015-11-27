@@ -1,3 +1,0 @@
-context:
-  - activate_virtualenv: sandbox
-  - use_vimrc: .vimrc
