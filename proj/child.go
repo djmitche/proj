@@ -17,12 +17,12 @@ type childFactory func() Child
 var childFactories map[string]childFactory = make(map[string]childFactory)
 
 type cdChild struct {
-	dir        string
-	env_config string
+	dir       string
+	envConfig string
 }
 
 func (child *cdChild) ParseArgs(args interface{}) {
-	node, ok := default_child(args, "dir")
+	node, ok := defaultChild(args, "dir")
 	if !ok {
 		log.Panic("no dir specified")
 	}
@@ -31,13 +31,13 @@ func (child *cdChild) ParseArgs(args interface{}) {
 		log.Panic("child dir is not a string")
 	}
 
-	args_map, ok := args.(map[string]interface{})
+	argsMap, ok := args.(map[string]interface{})
 	if ok {
-		config_arg, ok := args_map["config"]
+		configArg, ok := argsMap["config"]
 		if ok {
-			config_arg_str, ok := config_arg.(string)
+			configArgStr, ok := configArg.(string)
 			if ok {
-				child.env_config = config_arg_str
+				child.envConfig = configArgStr
 			} else {
 				log.Panic("config should be a string")
 			}
@@ -52,24 +52,24 @@ func (child *cdChild) Start(config Config, context Context, path string) {
 	}
 
 	// re-run from the top, in the same process
-	run(context, child.env_config, path)
+	run(context, child.envConfig, path)
 }
 
 func init() {
 	childFactories["cd"] = func() Child { return &cdChild{} }
 }
 
-func NewChild(child_type string) Child {
-	factory, ok := childFactories[child_type]
+func NewChild(childType string) Child {
+	factory, ok := childFactories[childType]
 	if !ok {
-		log.Fatalf("No such child type %s", child_type)
+		log.Fatalf("No such child type %s", childType)
 	}
 	return factory()
 }
 
 // Utility function to re-execute proj in the new environment
 // TODO: unused
-func local_reexec(context Context, path string) {
+func localReExecute(context Context, path string) {
 	log.Printf("running %s", os.Args[0])
 
 	// Fork a new child, then write out the context and exit.  This results
@@ -95,7 +95,7 @@ func local_reexec(context Context, path string) {
 		log.Panic(err)
 	}
 
-	write_context(context, w)
+	writeContext(context, w)
 
 	// TODO: would rather just exit here, but then the caller forgets about us
 	proc.Wait()
@@ -104,7 +104,7 @@ func local_reexec(context Context, path string) {
 
 // Start the child named by `elt`
 func StartChild(config Config, context Context, elt string, path string) {
-	log.Printf("start_child(%+v, %+v, %+v, %+v)\n", config, context, elt, path)
+	log.Printf("startChild(%+v, %+v, %+v, %+v)\n", config, context, elt, path)
 	child, ok := config.Children[elt]
 	if !ok {
 		log.Fatalf("No such child %s", elt)

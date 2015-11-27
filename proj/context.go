@@ -33,12 +33,12 @@ type envModifier struct {
 }
 
 func newEnvModifier(args interface{}) Modifier {
-	var_map, ok := args.(map[string]interface{})
+	varMap, ok := args.(map[string]interface{})
 	if !ok {
 		log.Fatal("Invalid env shell modifier %j", args)
 	}
 	variables := make(map[string]string)
-	for n, v := range var_map {
+	for n, v := range varMap {
 		variables[n], ok = v.(string)
 		if !ok {
 			log.Fatal("Invalid env shell modifier %j", args)
@@ -63,14 +63,14 @@ func init() {
 	modifierFactories["env"] = newEnvModifier
 }
 
-func new_modifier(raw interface{}) Modifier {
-	mod_type, args, err := singleKeyMap(raw)
+func newModifier(raw interface{}) Modifier {
+	modType, args, err := singleKeyMap(raw)
 	if err != nil {
 		log.Panic(err)
 	}
-	factory, ok := modifierFactories[mod_type]
+	factory, ok := modifierFactories[modType]
 	if !ok {
-		log.Fatal("unknown modifier type %s", mod_type)
+		log.Fatal("unknown modifier type %s", modType)
 	}
 	return factory(args)
 }
@@ -79,16 +79,16 @@ func new_modifier(raw interface{}) Modifier {
 // config's context modifiers to the context's modifiers
 func (ctx *Context) Update(config Config) {
 	for _, elt := range config.Modifiers {
-		ctx.Modifiers = append(ctx.Modifiers, new_modifier(elt))
+		ctx.Modifiers = append(ctx.Modifiers, newModifier(elt))
 	}
 }
 
 /* transmitting contexts over file descriptors */
 
-func load_context(cfd int) Context {
+func loadContext(cfd int) Context {
 	if cfd == 0 {
 		return Context{
-			Shell:     "bash", // TODO from supported_shells
+			Shell:     "bash", // TODO from supportedShells
 			Path:      []string{},
 			Modifiers: make([]Modifier, 0),
 		}
@@ -109,7 +109,7 @@ func load_context(cfd int) Context {
 	return context
 }
 
-func write_context(context Context, w *os.File) {
+func writeContext(context Context, w *os.File) {
 	encoder := json.NewEncoder(w)
 	err := encoder.Encode(context)
 	if err != nil {

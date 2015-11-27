@@ -21,12 +21,12 @@ func (c Config) String() string {
 		c.Filename, c.Children, c.Modifiers)
 }
 
-func load_config(env_config string) Config {
+func loadConfig(envConfig string) Config {
 	var config Config
 	var filename string
 
-	if len(env_config) > 0 {
-		filename = env_config
+	if len(envConfig) > 0 {
+		filename = envConfig
 	} else {
 		wd, err := os.Getwd()
 		if err != nil {
@@ -51,35 +51,35 @@ func load_config(env_config string) Config {
 		log.Panic(err)
 	}
 
-	cfg_file := yaml_to_json(file.Root)
-	cfg_map, ok := cfg_file.(map[string]interface{})
+	cfgFile := yamlToJson(file.Root)
+	cfgMap, ok := cfgFile.(map[string]interface{})
 	if !ok {
 		log.Panic(err)
 	}
 
 	// parse children
 	config.Children = make(map[string]Child)
-	children_node, ok := cfg_map["children"]
+	childrenNode, ok := cfgMap["children"]
 	if ok {
-		children_map, ok := children_node.(map[string]interface{})
+		childrenMap, ok := childrenNode.(map[string]interface{})
 		if !ok {
 			log.Fatal("`children` must be a map")
 		}
-		for name, value := range children_map {
-			child_type, args, err := singleKeyMap(value)
+		for name, value := range childrenMap {
+			childType, args, err := singleKeyMap(value)
 			if err != nil {
 				log.Panic(err)
 			}
-			child := NewChild(child_type)
+			child := NewChild(childType)
 			child.ParseArgs(args)
 			config.Children[name] = child
 		}
 	}
 
 	// parse shell modifiers
-	shell_node, ok := cfg_map["shell"]
+	shellNode, ok := cfgMap["shell"]
 	if ok {
-		config.Modifiers = shell_node.([]interface{})
+		config.Modifiers = shellNode.([]interface{})
 	} else {
 		config.Modifiers = make([]interface{}, 0)
 	}

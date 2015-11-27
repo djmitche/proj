@@ -8,16 +8,16 @@ import (
 
 /* main */
 
-func run(context Context, env_config string, path string) {
-	log.Printf("run(%#v, %#v, %#v)", context, env_config, path)
-	config := load_config(env_config)
+func run(context Context, envConfig string, path string) {
+	log.Printf("run(%#v, %#v, %#v)", context, envConfig, path)
+	config := loadConfig(envConfig)
 
 	// incorporate the configuration into the accumulated context
 	context.Update(config)
 
 	// either start a shell or enter the next path element
 	if len(path) == 0 {
-		do_shell(config, context)
+		doShell(config, context)
 	} else {
 		i := strings.Index(path, "/")
 		if i < 0 {
@@ -30,7 +30,7 @@ func run(context Context, env_config string, path string) {
 
 func Main() {
 	cfd := flag.Int("cfd", 0, "(internal use only)")
-	env_config := flag.String("env-config", "", "(internal use only)")
+	envConfig := flag.String("env-config", "", "(internal use only)")
 
 	flag.Parse()
 
@@ -41,6 +41,6 @@ func Main() {
 
 	path := args[0]
 
-	context := load_context(*cfd)
-	run(context, *env_config, path)
+	context := loadContext(*cfd)
+	run(context, *envConfig, path)
 }
