@@ -1,4 +1,4 @@
-package proj
+package shell
 
 import (
 	"fmt"
@@ -74,8 +74,8 @@ func (shell *bashShell) execute() error {
 		[]string{shellPath, "--rcfile", shell.rcFilename, "-i"}, nil)
 }
 
-func doShell(config *config.Config, context Context) error {
-	log.Printf("doShell(%+v, %+v)\n", config, context) // TODO
+func Spawn(config *config.Config, context Context) error {
+	log.Printf("Spawn(%+v, %+v)\n", config, context)
 
 	if context.Shell != "bash" {
 		return fmt.Errorf("unkonwn shell %s", context.Shell)

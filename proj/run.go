@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/djmitche/proj/proj/config"
+	"github.com/djmitche/proj/proj/shell"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -11,7 +12,7 @@ import (
 
 /* main */
 
-func run(context Context, configFilename string, path string) error {
+func run(context shell.Context, configFilename string, path string) error {
 	log.Printf("run(%#v, %#v, %#v)", context, configFilename, path)
 	config, err := config.LoadConfig(configFilename)
 	if err != nil {
@@ -26,7 +27,7 @@ func run(context Context, configFilename string, path string) error {
 
 	// either start a shell or enter the next path element
 	if len(path) == 0 {
-		err = doShell(config, context)
+		err = shell.Spawn(config, context)
 	} else {
 		i := strings.Index(path, "/")
 		if i < 0 {
@@ -57,7 +58,7 @@ func Main() error {
 
 	path := args[0]
 
-	context, err := loadContext(*cfd)
+	context, err := shell.LoadContext(*cfd)
 	if err != nil {
 		return err
 	}

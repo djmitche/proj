@@ -1,4 +1,4 @@
-package proj
+package shell
 
 import (
 	"encoding/json"
@@ -97,7 +97,7 @@ func (ctx *Context) Update(config *config.Config) error {
 
 /* transmitting contexts over file descriptors */
 
-func loadContext(cfd int) (Context, error) {
+func LoadContext(cfd int) (Context, error) {
 	if cfd == 0 {
 		return Context{
 			Shell:     "bash", // TODO from supportedShells
@@ -121,7 +121,7 @@ func loadContext(cfd int) (Context, error) {
 	return context, nil
 }
 
-func writeContext(context Context, w *os.File) error {
+func WriteContext(context Context, w *os.File) error {
 	encoder := json.NewEncoder(w)
 	defer w.Close()
 	return encoder.Encode(context)

@@ -3,6 +3,7 @@ package proj
 import (
 	"fmt"
 	"github.com/djmitche/proj/proj/config"
+	"github.com/djmitche/proj/proj/shell"
 	"github.com/djmitche/proj/proj/util"
 	"log"
 	"os"
@@ -11,7 +12,7 @@ import (
 /* child handling */
 
 type Child interface {
-	Start(config *config.Config, context Context, path string) error
+	Start(config *config.Config, context shell.Context, path string) error
 }
 
 type childFactory func(interface{}) (Child, error)
@@ -51,7 +52,7 @@ func newCdChild(args interface{}) (Child, error) {
 	return &child, nil
 }
 
-func (child *cdChild) Start(config *config.Config, context Context, path string) error {
+func (child *cdChild) Start(config *config.Config, context shell.Context, path string) error {
 	err := os.Chdir(child.dir)
 	if err != nil {
 		return err
@@ -75,7 +76,7 @@ func newChild(childType string, args interface{}) (Child, error) {
 
 // Utility function to re-execute proj in the new environment
 // TODO: unused
-func localReExecute(context Context, path string) error {
+func localReExecute(context shell.Context, path string) error {
 	log.Printf("running %s", os.Args[0])
 
 	// Fork a new child, then write out the context and exit.  This results
@@ -101,7 +102,7 @@ func localReExecute(context Context, path string) error {
 		return err
 	}
 
-	writeContext(context, w)
+	shell.WriteContext(context, w)
 
 	// TODO: would rather just exit here, but then the caller forgets about us
 	proc.Wait()
@@ -111,7 +112,7 @@ func localReExecute(context Context, path string) error {
 }
 
 // Start the child named by `elt`
-func StartChild(config *config.Config, context Context, elt string, path string) error {
+func StartChild(config *config.Config, context shell.Context, elt string, path string) error {
 	log.Printf("startChild(%+v, %+v, %+v, %+v)\n", config, context, elt, path)
 	childConfig, ok := config.Children[elt]
 	if !ok {
