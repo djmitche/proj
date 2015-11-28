@@ -93,7 +93,10 @@ func LoadConfig(configFilename string) (*Config, error) {
 	// parse shell modifiers
 	shellNode, ok := cfgMap["shell"]
 	if ok {
-		config.Modifiers = shellNode.([]interface{})
+		config.Modifiers, ok = shellNode.([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("`shell` is not a list in %q", filename)
+		}
 	} else {
 		config.Modifiers = make([]interface{}, 0)
 	}

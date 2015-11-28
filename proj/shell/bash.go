@@ -2,6 +2,8 @@ package shell
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"syscall" // TODO: don't use
@@ -31,12 +33,26 @@ func newBashShell() (Shell, error) {
 	return sh, nil
 }
 
+func (shell *bashShell) Type() string {
+	return "bash"
+}
+
 func (shell *bashShell) Write(p []byte) (int, error) {
 	return shell.rcFile.Write(p)
 }
 
 func (shell *bashShell) SetVariable(n, v string) error {
+	// TODO: shell quoting
 	_, err := shell.rcFile.Write([]byte(fmt.Sprintf("export %s=\"%s\"\n", n, v)))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (shell *bashShell) Source(file string) error {
+	// TODO: shell quoting
+	_, err := shell.rcFile.Write([]byte(fmt.Sprintf("source \"%s\"\n", file)))
 	if err != nil {
 		return err
 	}
@@ -53,11 +69,20 @@ func (shell *bashShell) execute() error {
 		return err
 	}
 
+	// log the rcfile contents (ignoring errors)
+	rcFileReader, err := os.OpenFile(shell.rcFilename, os.O_RDONLY, 0)
+	if err != nil {
+		panic(err)
+	}
+	content, _ := ioutil.ReadAll(rcFileReader)
+	rcFileReader.Close()
+	log.Printf("rcfile contents:\n====\n%s====", content)
+
 	shellPath, err := exec.LookPath("bash")
 	if err != nil {
 		return fmt.Errorf("could not find bash: %s", err)
 	}
 
 	return syscall.Exec(shellPath,
-		[]string{shellPath, "--rcfile", shell.rcFilename, "-i"}, nil)
+		[]string{shellPath, "--rcfile", shell.rcFilename, "-i"}, os.Environ())
 }

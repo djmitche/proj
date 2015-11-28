@@ -8,8 +8,16 @@ import (
 /* shell handling */
 
 type Shell interface {
+	// Get the shell type ("bash", "tcsh", etc.).  Modifiers may use this to
+	// determine what input they should provide.  It's not terribly important
+	// whether a modifier is aware of the different shell types or not.
+	Type() string
+
 	// Set an environment variable in the shell
 	SetVariable(n, v string) error
+
+	// Source a shell script (which must be appropriate for this shell type)
+	Source(file string) error
 
 	// Actually execute the shell
 	execute() error
