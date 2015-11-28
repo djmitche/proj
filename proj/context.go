@@ -2,6 +2,7 @@ package proj
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 )
@@ -16,10 +17,10 @@ type Context struct {
 
 type Modifier interface {
 	//MarhshalJSON() ([]byte, error) -- TODO
-	Apply(shell Shell)
+	Apply(shell Shell) error
 }
 
-type modifierFactory func(interface{}) Modifier
+type modifierFactory func(interface{}) (Modifier, error)
 
 var modifierFactories map[string]modifierFactory = make(map[string]modifierFactory)
 
@@ -32,66 +33,75 @@ type envModifier struct {
 	modifier
 }
 
-func newEnvModifier(args interface{}) Modifier {
+func newEnvModifier(args interface{}) (Modifier, error) {
 	varMap, ok := args.(map[string]interface{})
 	if !ok {
-		log.Fatal("Invalid env shell modifier %j", args)
+		return nil, fmt.Errorf("Invalid env shell modifier %j", args)
 	}
 	variables := make(map[string]string)
 	for n, v := range varMap {
 		variables[n], ok = v.(string)
 		if !ok {
-			log.Fatal("Invalid env shell modifier %j", args)
+			return nil, fmt.Errorf("Invalid env shell modifier %j", args)
 		}
 	}
 
 	return &envModifier{
 		//raw:       raw, XXX??
 		variables: variables,
-	}
+	}, nil
 }
 
-func (mod *envModifier) Apply(shell Shell) {
+func (mod *envModifier) Apply(shell Shell) error {
 	for n, v := range mod.variables {
 		log.Printf("applying %s=%s", n, v)
 		// TODO: shell quoting
-		shell.SetVariable(n, v)
+		err := shell.SetVariable(n, v)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func init() {
 	modifierFactories["env"] = newEnvModifier
 }
 
-func newModifier(raw interface{}) Modifier {
+func newModifier(raw interface{}) (Modifier, error) {
 	modType, args, err := singleKeyMap(raw)
 	if err != nil {
-		log.Panic(err)
+		return nil, err
 	}
 	factory, ok := modifierFactories[modType]
 	if !ok {
-		log.Fatal("unknown modifier type %s", modType)
+		return nil, fmt.Errorf("unknown modifier type %s", modType)
 	}
 	return factory(args)
 }
 
 // update a context based on a configuration; this amounts to appending the
 // config's context modifiers to the context's modifiers
-func (ctx *Context) Update(config Config) {
+func (ctx *Context) Update(config Config) error {
 	for _, elt := range config.Modifiers {
-		ctx.Modifiers = append(ctx.Modifiers, newModifier(elt))
+		mod, err := newModifier(elt)
+		if err != nil {
+			return err
+		}
+		ctx.Modifiers = append(ctx.Modifiers, mod)
 	}
+	return nil
 }
 
 /* transmitting contexts over file descriptors */
 
-func loadContext(cfd int) Context {
+func loadContext(cfd int) (Context, error) {
 	if cfd == 0 {
 		return Context{
 			Shell:     "bash", // TODO from supportedShells
 			Path:      []string{},
 			Modifiers: make([]Modifier, 0),
-		}
+		}, nil
 	}
 
 	// read from the given file descriptor and close it
@@ -100,20 +110,17 @@ func loadContext(cfd int) Context {
 	context := Context{}
 	err := decoder.Decode(&context)
 	if err != nil {
-		log.Panic(err)
+		return Context{}, err
 	}
 	ctxfile.Close()
 
 	log.Printf("got context %#v\n", context)
 
-	return context
+	return context, nil
 }
 
-func writeContext(context Context, w *os.File) {
+func writeContext(context Context, w *os.File) error {
 	encoder := json.NewEncoder(w)
-	err := encoder.Encode(context)
-	if err != nil {
-		log.Panic(err)
-	}
-	w.Close()
+	defer w.Close()
+	return encoder.Encode(context)
 }

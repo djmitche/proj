@@ -2,33 +2,42 @@ package proj
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"strings"
 )
 
 /* main */
 
-func run(context Context, envConfig string, path string) {
+func run(context Context, envConfig string, path string) error {
 	log.Printf("run(%#v, %#v, %#v)", context, envConfig, path)
-	config := loadConfig(envConfig)
+	config, err := loadConfig(envConfig)
+	if err != nil {
+		return err
+	}
 
 	// incorporate the configuration into the accumulated context
-	context.Update(config)
+	err = context.Update(config)
+	if err != nil {
+		return err
+	}
 
 	// either start a shell or enter the next path element
 	if len(path) == 0 {
-		doShell(config, context)
+		err = doShell(config, context)
 	} else {
 		i := strings.Index(path, "/")
 		if i < 0 {
-			StartChild(config, context, path, "")
+			err = StartChild(config, context, path, "")
 		} else {
-			StartChild(config, context, path[:i], path[i+1:])
+			err = StartChild(config, context, path[:i], path[i+1:])
 		}
 	}
+
+	return err
 }
 
-func Main() {
+func Main() error {
 	cfd := flag.Int("cfd", 0, "(internal use only)")
 	envConfig := flag.String("env-config", "", "(internal use only)")
 
@@ -36,11 +45,18 @@ func Main() {
 
 	args := flag.Args()
 	if len(args) != 1 {
-		log.Panic("Path is required")
+		return fmt.Errorf("Path argument is required")
 	}
 
 	path := args[0]
 
-	context := loadContext(*cfd)
-	run(context, *envConfig, path)
+	context, err := loadContext(*cfd)
+	if err != nil {
+		return err
+	}
+	err = run(context, *envConfig, path)
+	if err != nil {
+		return err
+	}
+	return nil
 }

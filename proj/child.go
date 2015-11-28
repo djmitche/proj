@@ -1,6 +1,7 @@
 package proj
 
 import (
+	"fmt"
 	"log"
 	"os"
 )
@@ -8,8 +9,8 @@ import (
 /* child handling */
 
 type Child interface {
-	ParseArgs(args interface{})
-	Start(config Config, context Context, path string)
+	ParseArgs(args interface{}) error
+	Start(config Config, context Context, path string) error
 }
 
 type childFactory func() Child
@@ -21,14 +22,14 @@ type cdChild struct {
 	envConfig string
 }
 
-func (child *cdChild) ParseArgs(args interface{}) {
+func (child *cdChild) ParseArgs(args interface{}) error {
 	node, ok := defaultChild(args, "dir")
 	if !ok {
-		log.Panic("no dir specified")
+		return fmt.Errorf("no dir specified")
 	}
 	child.dir, ok = node.(string)
 	if !ok {
-		log.Panic("child dir is not a string")
+		return fmt.Errorf("child dir is not a string")
 	}
 
 	argsMap, ok := args.(map[string]interface{})
@@ -39,37 +40,39 @@ func (child *cdChild) ParseArgs(args interface{}) {
 			if ok {
 				child.envConfig = configArgStr
 			} else {
-				log.Panic("config should be a string")
+				return fmt.Errorf("config should be a string")
 			}
 		}
 	}
+
+	return nil
 }
 
-func (child *cdChild) Start(config Config, context Context, path string) {
+func (child *cdChild) Start(config Config, context Context, path string) error {
 	err := os.Chdir(child.dir)
 	if err != nil {
-		log.Panic(err)
+		return err
 	}
 
 	// re-run from the top, in the same process
-	run(context, child.envConfig, path)
+	return run(context, child.envConfig, path)
 }
 
 func init() {
 	childFactories["cd"] = func() Child { return &cdChild{} }
 }
 
-func NewChild(childType string) Child {
+func NewChild(childType string) (Child, error) {
 	factory, ok := childFactories[childType]
 	if !ok {
-		log.Fatalf("No such child type %s", childType)
+		return nil, fmt.Errorf("No such child type %s", childType)
 	}
-	return factory()
+	return factory(), nil
 }
 
 // Utility function to re-execute proj in the new environment
 // TODO: unused
-func localReExecute(context Context, path string) {
+func localReExecute(context Context, path string) error {
 	log.Printf("running %s", os.Args[0])
 
 	// Fork a new child, then write out the context and exit.  This results
@@ -78,7 +81,7 @@ func localReExecute(context Context, path string) {
 	// TODO: just re-run Main?
 	r, w, err := os.Pipe()
 	if err != nil {
-		log.Panic(err)
+		return err
 	}
 
 	args := []string{os.Args[0], "--cfd", "3", path}
@@ -87,12 +90,12 @@ func localReExecute(context Context, path string) {
 	}
 	proc, err := os.StartProcess(args[0], args, &procattr)
 	if err != nil {
-		log.Panic(err)
+		return err
 	}
 
 	err = r.Close()
 	if err != nil {
-		log.Panic(err)
+		return err
 	}
 
 	writeContext(context, w)
@@ -100,18 +103,20 @@ func localReExecute(context Context, path string) {
 	// TODO: would rather just exit here, but then the caller forgets about us
 	proc.Wait()
 	os.Exit(0)
+
+	return nil
 }
 
 // Start the child named by `elt`
-func StartChild(config Config, context Context, elt string, path string) {
+func StartChild(config Config, context Context, elt string, path string) error {
 	log.Printf("startChild(%+v, %+v, %+v, %+v)\n", config, context, elt, path)
 	child, ok := config.Children[elt]
 	if !ok {
-		log.Fatalf("No such child %s", elt)
+		return fmt.Errorf("No such child %s", elt)
 	}
 
-	// add the element to the context to be handed to the child
+	// add the path element to the context to be handed to the child
 	context.Path = append(context.Path, elt)
 
-	child.Start(config, context, path)
+	return child.Start(config, context, path)
 }

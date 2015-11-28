@@ -3,7 +3,6 @@ package proj
 import (
 	"fmt"
 	"github.com/kylelemons/go-gypsy/yaml"
-	"log"
 	"os"
 	"path"
 )
@@ -21,7 +20,7 @@ func (c Config) String() string {
 		c.Filename, c.Children, c.Modifiers)
 }
 
-func loadConfig(envConfig string) Config {
+func loadConfig(envConfig string) (Config, error) {
 	var config Config
 	var filename string
 
@@ -30,31 +29,34 @@ func loadConfig(envConfig string) Config {
 	} else {
 		wd, err := os.Getwd()
 		if err != nil {
-			log.Panic(err)
+			return Config{}, err
 		}
 		filename = path.Clean(path.Join(wd, ".proj.yml"))
 		if _, err := os.Stat(filename); err != nil {
-			log.Printf("fallback, %#v", filename)
 			dirname := path.Base(wd)
 			filename = path.Clean(path.Join(wd, fmt.Sprintf("../%s-proj.yml", dirname)))
 		}
 	}
 
 	if _, err := os.Stat(filename); err != nil {
-		log.Panic(fmt.Sprintf("Config file '%s' not found", filename))
+		return Config{}, fmt.Errorf("Config file '%s' not found", filename)
 	}
 	config.Filename = filename
 
 	// TODO: load ~/.projrc.yml too
 	file, err := yaml.ReadFile(config.Filename)
 	if err != nil {
-		log.Panic(err)
+		return Config{}, err
 	}
 
-	cfgFile := yamlToJson(file.Root)
+	cfgFile, err := yamlToJson(file.Root)
+	if err != nil {
+		return Config{}, err
+	}
+
 	cfgMap, ok := cfgFile.(map[string]interface{})
 	if !ok {
-		log.Panic(err)
+		return Config{}, err
 	}
 
 	// parse children
@@ -63,15 +65,21 @@ func loadConfig(envConfig string) Config {
 	if ok {
 		childrenMap, ok := childrenNode.(map[string]interface{})
 		if !ok {
-			log.Fatal("`children` must be a map")
+			return Config{}, fmt.Errorf("`children` must be a map in %q", filename)
 		}
 		for name, value := range childrenMap {
 			childType, args, err := singleKeyMap(value)
 			if err != nil {
-				log.Panic(err)
+				return Config{}, err
 			}
-			child := NewChild(childType)
-			child.ParseArgs(args)
+			child, err := NewChild(childType)
+			if err != nil {
+				return Config{}, fmt.Errorf("parsing child %q in %q: %s", name, filename, err)
+			}
+			err = child.ParseArgs(args)
+			if err != nil {
+				return Config{}, err
+			}
 			config.Children[name] = child
 		}
 	}
@@ -84,5 +92,5 @@ func loadConfig(envConfig string) Config {
 		config.Modifiers = make([]interface{}, 0)
 	}
 
-	return config
+	return config, nil
 }
