@@ -62,6 +62,7 @@ func LoadConfig(configFilename string) (*Config, error) {
 		return nil, err
 	}
 
+	// immediately convert that YAML document to encoding/json's data structures
 	cfgFile, err := yamlToJson(file.Root)
 	if err != nil {
 		return nil, err

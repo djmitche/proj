@@ -76,43 +76,6 @@ func newChild(childType string, args interface{}) (Child, error) {
 	return factory(args)
 }
 
-// Utility function to re-execute proj in the new environment
-// TODO: unused
-func localReExecute(context shell.Context, path string) error {
-	log.Printf("running %s", os.Args[0])
-
-	// Fork a new child, then write out the context and exit.  This results
-	// in a rapid cascade of sub-processes, with ppid=1, but Go doesn't allow
-	// raw forks, it seems. (TODO)
-	// TODO: just re-run Main?
-	r, w, err := os.Pipe()
-	if err != nil {
-		return err
-	}
-
-	args := []string{os.Args[0], "--cfd", "3", path}
-	procattr := os.ProcAttr{
-		Files: []*os.File{os.Stdin, os.Stdout, os.Stderr, r},
-	}
-	proc, err := os.StartProcess(args[0], args, &procattr)
-	if err != nil {
-		return err
-	}
-
-	err = r.Close()
-	if err != nil {
-		return err
-	}
-
-	shell.WriteContext(context, w)
-
-	// TODO: would rather just exit here, but then the caller forgets about us
-	proc.Wait()
-	os.Exit(0)
-
-	return nil
-}
-
 // Start the child named by `elt`
 func StartChild(config *config.Config, context shell.Context, elt string, path string, recurse recurseFunc) error {
 	log.Printf("startChild(%+v, %+v, %+v, %+v)\n", config, context, elt, path)
