@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"github.com/djmitche/proj/proj"
 	"log"
+	"os"
 )
 
 func main() {
@@ -11,6 +13,7 @@ func main() {
 
 	err := proj.Main()
 	if err != nil {
-		log.Println(err)
+		fmt.Fprintf(os.Stderr, "error: %s\n", err)
+		os.Exit(1)
 	}
 }
