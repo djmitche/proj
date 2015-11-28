@@ -1,7 +1,8 @@
-package proj
+package config
 
 import (
 	"fmt"
+	"github.com/djmitche/proj/proj/util"
 	"github.com/kylelemons/go-gypsy/yaml"
 	"log"
 	"os"
@@ -21,7 +22,7 @@ type ChildConfig struct {
 	Args interface{}
 }
 
-func loadConfig(configFilename string) (*Config, error) {
+func LoadConfig(configFilename string) (*Config, error) {
 	var config Config
 	var filenames []string
 
@@ -80,7 +81,7 @@ func loadConfig(configFilename string) (*Config, error) {
 			return nil, fmt.Errorf("`children` must be a map in %q", filename)
 		}
 		for name, value := range childrenMap {
-			childType, args, err := singleKeyMap(value)
+			childType, args, err := util.SingleKeyMap(value)
 			if err != nil {
 				return nil, err
 			}

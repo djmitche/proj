@@ -3,6 +3,7 @@ package proj
 import (
 	"flag"
 	"fmt"
+	"github.com/djmitche/proj/proj/config"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -12,7 +13,7 @@ import (
 
 func run(context Context, configFilename string, path string) error {
 	log.Printf("run(%#v, %#v, %#v)", context, configFilename, path)
-	config, err := loadConfig(configFilename)
+	config, err := config.LoadConfig(configFilename)
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,8 @@ package proj
 
 import (
 	"fmt"
+	"github.com/djmitche/proj/proj/config"
+	"github.com/djmitche/proj/proj/util"
 	"log"
 	"os"
 )
@@ -9,7 +11,7 @@ import (
 /* child handling */
 
 type Child interface {
-	Start(config *Config, context Context, path string) error
+	Start(config *config.Config, context Context, path string) error
 }
 
 type childFactory func(interface{}) (Child, error)
@@ -24,7 +26,7 @@ type cdChild struct {
 func newCdChild(args interface{}) (Child, error) {
 	var child cdChild
 
-	node, ok := defaultChild(args, "dir")
+	node, ok := util.DefaultChild(args, "dir")
 	if !ok {
 		return nil, fmt.Errorf("no dir specified")
 	}
@@ -49,7 +51,7 @@ func newCdChild(args interface{}) (Child, error) {
 	return &child, nil
 }
 
-func (child *cdChild) Start(config *Config, context Context, path string) error {
+func (child *cdChild) Start(config *config.Config, context Context, path string) error {
 	err := os.Chdir(child.dir)
 	if err != nil {
 		return err
@@ -109,7 +111,7 @@ func localReExecute(context Context, path string) error {
 }
 
 // Start the child named by `elt`
-func StartChild(config *Config, context Context, elt string, path string) error {
+func StartChild(config *config.Config, context Context, elt string, path string) error {
 	log.Printf("startChild(%+v, %+v, %+v, %+v)\n", config, context, elt, path)
 	childConfig, ok := config.Children[elt]
 	if !ok {

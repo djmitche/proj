@@ -2,6 +2,7 @@ package proj
 
 import (
 	"fmt"
+	"github.com/djmitche/proj/proj/config"
 	"log"
 	"os"
 	"os/exec"
@@ -73,7 +74,7 @@ func (shell *bashShell) execute() error {
 		[]string{shellPath, "--rcfile", shell.rcFilename, "-i"}, nil)
 }
 
-func doShell(config *Config, context Context) error {
+func doShell(config *config.Config, context Context) error {
 	log.Printf("doShell(%+v, %+v)\n", config, context) // TODO
 
 	if context.Shell != "bash" {
