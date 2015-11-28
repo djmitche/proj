@@ -2,7 +2,6 @@ package shell
 
 import (
 	"fmt"
-	"github.com/djmitche/proj/proj/config"
 	"log"
 )
 
@@ -16,8 +15,9 @@ type Shell interface {
 	execute() error
 }
 
-func Spawn(config *config.Config, context *Context) error {
-	log.Printf("Spawn(%+v, %+v)\n", config, context)
+// Spawn a new shell using the given Context
+func Spawn(context *Context) error {
+	log.Printf("Spawn(%+v)\n", context)
 
 	if context.Shell != "bash" {
 		return fmt.Errorf("unkonwn shell %s", context.Shell)
@@ -29,7 +29,7 @@ func Spawn(config *config.Config, context *Context) error {
 	}
 
 	for _, mod := range context.Modifiers {
-		err = mod.Apply(shell)
+		err = mod.Modify(shell)
 		if err != nil {
 			return fmt.Errorf("while applying modifier %q to shell: %s",
 				mod, err)

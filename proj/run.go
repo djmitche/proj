@@ -28,7 +28,7 @@ func run(context *shell.Context, configFilename string, path string) error {
 
 	// either start a shell or enter the next path element
 	if len(path) == 0 {
-		err = shell.Spawn(config, context)
+		err = shell.Spawn(context)
 	} else {
 		i := strings.Index(path, "/")
 		if i < 0 {

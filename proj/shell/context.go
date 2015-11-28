@@ -1,3 +1,24 @@
+// The shell package handles starting a shell at the end of a proj path.
+//
+// Shells are started with a "context" which evolves as proj traverses the path.
+// In particular, the context accumulates shell modifiers along the way.  Shell
+// modifiiers are specified like this in the configuration file:
+//
+//     shell:
+//         env:
+//             FOO=foo
+//             BAR=bar
+//
+// Here, `env` is the modifier type, and `{"FOO": "foo", "BAR": bar}` are its
+// arguments.  `env.go` provides a good example of a modifier implementation.
+//
+// Modifiers call methods on a Shell to control the behavior of that shell; this
+// allows different shells to interoperate smoothly with modifiers.
+//
+// When traversing the proj path involves hopping from host to host or some
+// other transition that requires spawning a new process, the entire Context
+// is encoded by the parent process and decoded in the child.  As such, all
+// Modifier implementations must be JSONable.
 package shell
 
 import (
@@ -6,14 +27,16 @@ import (
 	"github.com/djmitche/proj/proj/util"
 )
 
+// A context for execution of a shell
 type Context struct {
 	Shell     string
 	Path      []string
 	Modifiers []Modifier
 }
 
+// A modifier of shell behavior
 type Modifier interface {
-	Apply(shell Shell) error
+	Modify(shell Shell) error
 }
 
 type modifierFactory func(interface{}) (Modifier, error)

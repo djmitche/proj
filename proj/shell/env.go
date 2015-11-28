@@ -23,12 +23,11 @@ func newEnvModifier(args interface{}) (Modifier, error) {
 	}
 
 	return &envModifier{
-		//raw:       raw, XXX??
 		variables: variables,
 	}, nil
 }
 
-func (mod *envModifier) Apply(shell Shell) error {
+func (mod *envModifier) Modify(shell Shell) error {
 	for n, v := range mod.variables {
 		log.Printf("applying %s=%s", n, v)
 		// TODO: shell quoting

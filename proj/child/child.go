@@ -1,3 +1,18 @@
+// The proj/child package manages traversing the proj path into child projects.
+// For example, the proj path `work/openstack/ironic` requires first traversing
+// to the `work` project, then `openstack`, and then `ironic`, collecting context
+// along the way.
+//
+// Children are configured for each project like this:
+//
+// children:
+//     openstack:
+//         cd: openstack/src
+//
+// This says that the child named `openstack` has type `cd` with argument
+// `openstack/src`.  Child type implementations get handed a wealth of information
+// and can use it to re-run `proj` in the child project, in whatever way is most
+// appropriate.
 package child
 
 import (
@@ -35,7 +50,7 @@ type childFunc func(info *childInfo) error
 
 var childFuncs map[string]childFunc = make(map[string]childFunc)
 
-// Start the child named by `elt`
+// Start the child named by `elt` in the current project's configuration, based on the given context.
 func StartChild(config *config.Config, context *shell.Context, elt string, path string, recurse recurseFunc) error {
 	log.Printf("startChild(%+v, %+v, %+v, %+v)\n", config, context, elt, path)
 	childConfig, ok := config.Children[elt]
