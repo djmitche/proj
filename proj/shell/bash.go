@@ -25,7 +25,7 @@ func newBashShell() (Shell, error) {
 		rcFile:     file,
 	}
 
-	_, err = sh.Write([]byte("[ -f ~/.bashrc ] && . ~/.bashrc\nset -e\n"))
+	_, err = sh.Write([]byte("[ -f ~/.bashrc ] && . ~/.bashrc\n"))
 	if err != nil {
 		return nil, err
 	}
