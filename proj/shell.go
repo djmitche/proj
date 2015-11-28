@@ -73,7 +73,7 @@ func (shell *bashShell) execute() error {
 		[]string{shellPath, "--rcfile", shell.rcFilename, "-i"}, nil)
 }
 
-func doShell(config Config, context Context) error {
+func doShell(config *Config, context Context) error {
 	log.Printf("doShell(%+v, %+v)\n", config, context) // TODO
 
 	if context.Shell != "bash" {

@@ -82,7 +82,7 @@ func newModifier(raw interface{}) (Modifier, error) {
 
 // update a context based on a configuration; this amounts to appending the
 // config's context modifiers to the context's modifiers
-func (ctx *Context) Update(config Config) error {
+func (ctx *Context) Update(config *Config) error {
 	for _, elt := range config.Modifiers {
 		mod, err := newModifier(elt)
 		if err != nil {

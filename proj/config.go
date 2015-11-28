@@ -16,18 +16,18 @@ type Config struct {
 	Modifiers []interface{}
 }
 
-func (c Config) String() string {
+func (c *Config) String() string {
 	return fmt.Sprintf("{\n    Filename: %#v\n    Children: %#v\n    Modifiers: %#v\n}",
 		c.Filename, c.Children, c.Modifiers)
 }
 
-func loadConfig(configFilename string) (Config, error) {
+func loadConfig(configFilename string) (*Config, error) {
 	var config Config
 	var filenames []string
 
 	cwd, err := os.Getwd()
 	if err != nil {
-		return Config{}, err
+		return nil, err
 	}
 
 	if configFilename != "" {
@@ -50,24 +50,25 @@ func loadConfig(configFilename string) (Config, error) {
 	}
 	if filename == "" {
 		log.Printf("WARNING: no config file found for %q", cwd)
-		return Config{}, nil
+		// return a pointer to an empty config
+		return &config, nil
 	}
 	config.Filename = filename
 
 	// TODO: load ~/.projrc.yml too
 	file, err := yaml.ReadFile(config.Filename)
 	if err != nil {
-		return Config{}, err
+		return nil, err
 	}
 
 	cfgFile, err := yamlToJson(file.Root)
 	if err != nil {
-		return Config{}, err
+		return nil, err
 	}
 
 	cfgMap, ok := cfgFile.(map[string]interface{})
 	if !ok {
-		return Config{}, err
+		return nil, err
 	}
 
 	// parse children
@@ -76,20 +77,20 @@ func loadConfig(configFilename string) (Config, error) {
 	if ok {
 		childrenMap, ok := childrenNode.(map[string]interface{})
 		if !ok {
-			return Config{}, fmt.Errorf("`children` must be a map in %q", filename)
+			return nil, fmt.Errorf("`children` must be a map in %q", filename)
 		}
 		for name, value := range childrenMap {
 			childType, args, err := singleKeyMap(value)
 			if err != nil {
-				return Config{}, err
+				return nil, err
 			}
 			child, err := NewChild(childType)
 			if err != nil {
-				return Config{}, fmt.Errorf("parsing child %q in %q: %s", name, filename, err)
+				return nil, fmt.Errorf("parsing child %q in %q: %s", name, filename, err)
 			}
 			err = child.ParseArgs(args)
 			if err != nil {
-				return Config{}, err
+				return nil, err
 			}
 			config.Children[name] = child
 		}
@@ -103,5 +104,5 @@ func loadConfig(configFilename string) (Config, error) {
 		config.Modifiers = make([]interface{}, 0)
 	}
 
-	return config, nil
+	return &config, nil
 }

@@ -10,7 +10,7 @@ import (
 
 type Child interface {
 	ParseArgs(args interface{}) error
-	Start(config Config, context Context, path string) error
+	Start(config *Config, context Context, path string) error
 }
 
 type childFactory func() Child
@@ -48,7 +48,7 @@ func (child *cdChild) ParseArgs(args interface{}) error {
 	return nil
 }
 
-func (child *cdChild) Start(config Config, context Context, path string) error {
+func (child *cdChild) Start(config *Config, context Context, path string) error {
 	err := os.Chdir(child.dir)
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func localReExecute(context Context, path string) error {
 }
 
 // Start the child named by `elt`
-func StartChild(config Config, context Context, elt string, path string) error {
+func StartChild(config *Config, context Context, elt string, path string) error {
 	log.Printf("startChild(%+v, %+v, %+v, %+v)\n", config, context, elt, path)
 	child, ok := config.Children[elt]
 	if !ok {
