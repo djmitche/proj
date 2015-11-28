@@ -3,6 +3,7 @@ package proj
 import (
 	"fmt"
 	"github.com/kylelemons/go-gypsy/yaml"
+	"log"
 	"os"
 	"path"
 )
@@ -22,24 +23,34 @@ func (c Config) String() string {
 
 func loadConfig(configFilename string) (Config, error) {
 	var config Config
-	var filename string
+	var filenames []string
 
-	if len(configFilename) > 0 {
-		filename = configFilename
-	} else {
-		wd, err := os.Getwd()
-		if err != nil {
-			return Config{}, err
-		}
-		filename = path.Clean(path.Join(wd, ".proj.yml"))
-		if _, err := os.Stat(filename); err != nil {
-			dirname := path.Base(wd)
-			filename = path.Clean(path.Join(wd, fmt.Sprintf("../%s-proj.yml", dirname)))
-		}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return Config{}, err
 	}
 
-	if _, err := os.Stat(filename); err != nil {
-		return Config{}, fmt.Errorf("Config file '%s' not found", filename)
+	if configFilename != "" {
+		filenames = []string{configFilename}
+	} else {
+		filenames = append(filenames,
+			path.Clean(path.Join(cwd, ".proj.yml")))
+
+		dirname := path.Base(cwd)
+		filenames = append(filenames,
+			path.Clean(path.Join(cwd, fmt.Sprintf("../%s-proj.yml", dirname))))
+	}
+
+	var filename string
+	for _, fn := range filenames {
+		if _, err := os.Stat(fn); err == nil {
+			filename = fn
+			break
+		}
+	}
+	if filename == "" {
+		log.Printf("WARNING: no config file found for %q", cwd)
+		return Config{}, nil
 	}
 	config.Filename = filename
 
