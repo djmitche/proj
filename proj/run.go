@@ -3,6 +3,7 @@ package proj
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"strings"
 )
@@ -38,10 +39,15 @@ func run(context Context, envConfig string, path string) error {
 }
 
 func Main() error {
+	verbose := flag.Bool("v", false, "enable verbose logging")
 	cfd := flag.Int("cfd", 0, "(internal use only)")
 	envConfig := flag.String("env-config", "", "(internal use only)")
 
 	flag.Parse()
+
+	if !*verbose {
+		log.SetOutput(ioutil.Discard)
+	}
 
 	args := flag.Args()
 	if len(args) != 1 {

@@ -6,8 +6,11 @@ import (
 )
 
 func main() {
+	log.SetFlags(0)
+	log.SetPrefix("proj: ")
+
 	err := proj.Main()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 }
