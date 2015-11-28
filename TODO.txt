@@ -1,0 +1,25 @@
+code
+----
+* tests
+* parse ~/.projrc.yml, too
+* shell quoting
+
+child types
+-----------
+* docker run
+* ec2 instance (start automatically)
+
+modifiers
+---------
+* npm environment?
+* ruby environment?
+* enable git prompt
+* enable hg prompt
+* append to PATH
+* raw shell input
+* gopath (just take a relative path)
+
+features
+--------
+* interpolate path into env var (for prompt)
+* use a different config format, or at least parser
