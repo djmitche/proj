@@ -9,11 +9,10 @@ import (
 /* child handling */
 
 type Child interface {
-	ParseArgs(args interface{}) error
 	Start(config *Config, context Context, path string) error
 }
 
-type childFactory func() Child
+type childFactory func(interface{}) (Child, error)
 
 var childFactories map[string]childFactory = make(map[string]childFactory)
 
@@ -22,14 +21,16 @@ type cdChild struct {
 	configFilename string
 }
 
-func (child *cdChild) ParseArgs(args interface{}) error {
+func newCdChild(args interface{}) (Child, error) {
+	var child cdChild
+
 	node, ok := defaultChild(args, "dir")
 	if !ok {
-		return fmt.Errorf("no dir specified")
+		return nil, fmt.Errorf("no dir specified")
 	}
 	child.dir, ok = node.(string)
 	if !ok {
-		return fmt.Errorf("child dir is not a string")
+		return nil, fmt.Errorf("child dir is not a string")
 	}
 
 	argsMap, ok := args.(map[string]interface{})
@@ -40,12 +41,12 @@ func (child *cdChild) ParseArgs(args interface{}) error {
 			if ok {
 				child.configFilename = configArgStr
 			} else {
-				return fmt.Errorf("config should be a string")
+				return nil, fmt.Errorf("config should be a string")
 			}
 		}
 	}
 
-	return nil
+	return &child, nil
 }
 
 func (child *cdChild) Start(config *Config, context Context, path string) error {
@@ -59,15 +60,15 @@ func (child *cdChild) Start(config *Config, context Context, path string) error 
 }
 
 func init() {
-	childFactories["cd"] = func() Child { return &cdChild{} }
+	childFactories["cd"] = newCdChild
 }
 
-func NewChild(childType string) (Child, error) {
+func newChild(childType string, args interface{}) (Child, error) {
 	factory, ok := childFactories[childType]
 	if !ok {
 		return nil, fmt.Errorf("No such child type %s", childType)
 	}
-	return factory(), nil
+	return factory(args)
 }
 
 // Utility function to re-execute proj in the new environment
@@ -110,9 +111,14 @@ func localReExecute(context Context, path string) error {
 // Start the child named by `elt`
 func StartChild(config *Config, context Context, elt string, path string) error {
 	log.Printf("startChild(%+v, %+v, %+v, %+v)\n", config, context, elt, path)
-	child, ok := config.Children[elt]
+	childConfig, ok := config.Children[elt]
 	if !ok {
 		return fmt.Errorf("No such child %s", elt)
+	}
+
+	child, err := newChild(childConfig.Type, childConfig.Args)
+	if err != nil {
+		return err
 	}
 
 	// add the path element to the context to be handed to the child

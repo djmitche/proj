@@ -12,13 +12,13 @@ import (
 
 type Config struct {
 	Filename  string
-	Children  map[string]Child
+	Children  map[string]ChildConfig
 	Modifiers []interface{}
 }
 
-func (c *Config) String() string {
-	return fmt.Sprintf("{\n    Filename: %#v\n    Children: %#v\n    Modifiers: %#v\n}",
-		c.Filename, c.Children, c.Modifiers)
+type ChildConfig struct {
+	Type string
+	Args interface{}
 }
 
 func loadConfig(configFilename string) (*Config, error) {
@@ -72,7 +72,7 @@ func loadConfig(configFilename string) (*Config, error) {
 	}
 
 	// parse children
-	config.Children = make(map[string]Child)
+	config.Children = make(map[string]ChildConfig)
 	childrenNode, ok := cfgMap["children"]
 	if ok {
 		childrenMap, ok := childrenNode.(map[string]interface{})
@@ -84,15 +84,7 @@ func loadConfig(configFilename string) (*Config, error) {
 			if err != nil {
 				return nil, err
 			}
-			child, err := NewChild(childType)
-			if err != nil {
-				return nil, fmt.Errorf("parsing child %q in %q: %s", name, filename, err)
-			}
-			err = child.ParseArgs(args)
-			if err != nil {
-				return nil, err
-			}
-			config.Children[name] = child
+			config.Children[name] = ChildConfig{childType, args}
 		}
 	}
 
