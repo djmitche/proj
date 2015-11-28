@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-type recurseFunc func(context shell.Context, configFilename string, path string) error
+type recurseFunc func(context *shell.Context, configFilename string, path string) error
 
 // information that is useful to each child function
 type childInfo struct {
@@ -21,7 +21,7 @@ type childInfo struct {
 	config *config.Config
 
 	// current shell contexst
-	context shell.Context
+	context *shell.Context
 
 	// remaining proj path after this child
 	path string
@@ -36,7 +36,7 @@ type childFunc func(info *childInfo) error
 var childFuncs map[string]childFunc = make(map[string]childFunc)
 
 // Start the child named by `elt`
-func StartChild(config *config.Config, context shell.Context, elt string, path string, recurse recurseFunc) error {
+func StartChild(config *config.Config, context *shell.Context, elt string, path string, recurse recurseFunc) error {
 	log.Printf("startChild(%+v, %+v, %+v, %+v)\n", config, context, elt, path)
 	childConfig, ok := config.Children[elt]
 	if !ok {

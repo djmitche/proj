@@ -74,7 +74,7 @@ func (shell *bashShell) execute() error {
 		[]string{shellPath, "--rcfile", shell.rcFilename, "-i"}, nil)
 }
 
-func Spawn(config *config.Config, context Context) error {
+func Spawn(config *config.Config, context *Context) error {
 	log.Printf("Spawn(%+v, %+v)\n", config, context)
 
 	if context.Shell != "bash" {

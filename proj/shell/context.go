@@ -97,9 +97,9 @@ func (ctx *Context) Update(config *config.Config) error {
 
 /* transmitting contexts over file descriptors */
 
-func LoadContext(cfd int) (Context, error) {
+func LoadContext(cfd int) (*Context, error) {
 	if cfd == 0 {
-		return Context{
+		return &Context{
 			Shell:     "bash", // TODO from supportedShells
 			Path:      []string{},
 			Modifiers: make([]Modifier, 0),
@@ -112,16 +112,16 @@ func LoadContext(cfd int) (Context, error) {
 	context := Context{}
 	err := decoder.Decode(&context)
 	if err != nil {
-		return Context{}, err
+		return nil, err
 	}
 	ctxfile.Close()
 
 	log.Printf("got context %#v\n", context)
 
-	return context, nil
+	return &context, nil
 }
 
-func WriteContext(context Context, w *os.File) error {
+func WriteContext(context *Context, w *os.File) error {
 	encoder := json.NewEncoder(w)
 	defer w.Close()
 	return encoder.Encode(context)

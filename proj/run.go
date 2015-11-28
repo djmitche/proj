@@ -13,7 +13,7 @@ import (
 
 /* main */
 
-func run(context shell.Context, configFilename string, path string) error {
+func run(context *shell.Context, configFilename string, path string) error {
 	log.Printf("run(%#v, %#v, %#v)", context, configFilename, path)
 	config, err := config.LoadConfig(configFilename)
 	if err != nil {
