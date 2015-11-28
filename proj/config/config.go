@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/djmitche/proj/proj/util"
-	"github.com/kylelemons/go-gypsy/yaml"
+	"github.com/spf13/viper"
 	"log"
 	"os"
 	"path"
@@ -12,7 +12,7 @@ import (
 /* Config handling */
 
 type Config struct {
-	Filename  string
+	File      *viper.Viper
 	Children  map[string]ChildConfig
 	Modifiers []interface{}
 }
@@ -22,7 +22,11 @@ type ChildConfig struct {
 	Args interface{}
 }
 
-func LoadConfig(configFilename string) (*Config, error) {
+// Load the proj configuration for the current directory.  This will come from
+// an explicitly specified configuration file, or from `.proj.yml`, or
+// `../<dirname>-proj.yml`.  If no configuration is found, LoadProjConfig will
+// return an empty configuration (common for "leaf" projects).
+func LoadProjConfig(configFilename string) (*Config, error) {
 	var config Config
 	var filenames []string
 
@@ -54,49 +58,32 @@ func LoadConfig(configFilename string) (*Config, error) {
 		// return a pointer to an empty config
 		return &config, nil
 	}
-	config.Filename = filename
 
-	// TODO: load ~/.projrc.yml too
-	file, err := yaml.ReadFile(config.Filename)
+	// load the config file with Viper
+	v := viper.New()
+	v.SetConfigFile(filename)
+	err = v.ReadInConfig()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing %q: %s", filename, err)
 	}
-
-	// immediately convert that YAML document to encoding/json's data structures
-	cfgFile, err := yamlToJson(file.Root)
-	if err != nil {
-		return nil, err
-	}
-
-	cfgMap, ok := cfgFile.(map[string]interface{})
-	if !ok {
-		return nil, err
-	}
+	config.File = v
 
 	// parse children
 	config.Children = make(map[string]ChildConfig)
-	childrenNode, ok := cfgMap["children"]
-	if ok {
-		childrenMap, ok := childrenNode.(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("`children` must be a map in %q", filename)
-		}
-		for name, value := range childrenMap {
+	if v.IsSet("children") {
+		for name, value := range v.GetStringMap("children") {
 			childType, args, err := util.SingleKeyMap(value)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("child %q in %q: %s", name, filename, err)
 			}
 			config.Children[name] = ChildConfig{childType, args}
 		}
 	}
 
 	// parse shell modifiers
-	shellNode, ok := cfgMap["shell"]
-	if ok {
-		config.Modifiers, ok = shellNode.([]interface{})
-		if !ok {
-			return nil, fmt.Errorf("`shell` is not a list in %q", filename)
-		}
+	if v.IsSet("shell") {
+		modifiers := v.Get("shell")
+		config.Modifiers = modifiers.([]interface{})
 	} else {
 		config.Modifiers = make([]interface{}, 0)
 	}

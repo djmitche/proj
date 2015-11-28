@@ -24,4 +24,3 @@ modifiers
 features
 --------
 * interpolate path into env var (for prompt)
-* use a different config format, or at least parser

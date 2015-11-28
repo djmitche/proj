@@ -46,7 +46,7 @@ var modifierFactories map[string]modifierFactory = make(map[string]modifierFacto
 func newModifier(raw interface{}) (Modifier, error) {
 	modType, args, err := util.SingleKeyMap(raw)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("interpreting %q: %s", raw, err)
 	}
 	factory, ok := modifierFactories[modType]
 	if !ok {

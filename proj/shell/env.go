@@ -2,6 +2,7 @@ package shell
 
 import (
 	"fmt"
+	"github.com/spf13/cast"
 )
 
 type envModifier struct {
@@ -20,12 +21,13 @@ func (mod *envModifier) Modify(shell Shell) error {
 
 func init() {
 	modifierFactories["env"] = func(args interface{}) (Modifier, error) {
-		varMap, ok := args.(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("Invalid env shell modifier %j", args)
+		varMap, err := cast.ToStringMapE(args)
+		if err != nil {
+			return nil, fmt.Errorf("Invalid env shell modifier %j: %s", args, err)
 		}
 		variables := make(map[string]string)
 		for n, v := range varMap {
+			var ok bool
 			variables[n], ok = v.(string)
 			if !ok {
 				return nil, fmt.Errorf("Invalid env shell modifier %j", args)

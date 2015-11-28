@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"github.com/spf13/cast"
 )
 
 // Utility function to get a child of a JSON node, or if the JSON node is not a
@@ -17,12 +18,15 @@ func DefaultChild(args interface{}, key string) (interface{}, bool) {
 	}
 }
 
-// Expect a JSON map with a single key and break that out into the key and its
+// Expect a Viper map with a single key and break that out into the key and its
 // value.  This is a common structure in YAML files.
 func SingleKeyMap(input interface{}) (string, interface{}, error) {
-	inputMap, ok := input.(map[string]interface{})
-	if !ok || len(inputMap) != 1 {
-		return "", nil, fmt.Errorf("expected a single-propery object")
+	inputMap, err := cast.ToStringMapE(input)
+	if err != nil {
+		return "", nil, fmt.Errorf("expected a single-key map: %s", err)
+	}
+	if len(inputMap) != 1 {
+		return "", nil, fmt.Errorf("expected a single-key map; got %d keys", len(inputMap))
 	}
 	for key, args := range inputMap {
 		return key, args, nil

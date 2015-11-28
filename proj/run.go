@@ -15,7 +15,7 @@ import (
 
 func run(context *shell.Context, configFilename string, path string) error {
 	log.Printf("run(%#v, %#v, %#v)", context, configFilename, path)
-	config, err := config.LoadConfig(configFilename)
+	config, err := config.LoadProjConfig(configFilename)
 	if err != nil {
 		return err
 	}
