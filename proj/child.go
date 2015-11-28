@@ -18,8 +18,8 @@ type childFactory func() Child
 var childFactories map[string]childFactory = make(map[string]childFactory)
 
 type cdChild struct {
-	dir       string
-	envConfig string
+	dir            string
+	configFilename string
 }
 
 func (child *cdChild) ParseArgs(args interface{}) error {
@@ -38,7 +38,7 @@ func (child *cdChild) ParseArgs(args interface{}) error {
 		if ok {
 			configArgStr, ok := configArg.(string)
 			if ok {
-				child.envConfig = configArgStr
+				child.configFilename = configArgStr
 			} else {
 				return fmt.Errorf("config should be a string")
 			}
@@ -55,7 +55,7 @@ func (child *cdChild) Start(config Config, context Context, path string) error {
 	}
 
 	// re-run from the top, in the same process
-	return run(context, child.envConfig, path)
+	return run(context, child.configFilename, path)
 }
 
 func init() {

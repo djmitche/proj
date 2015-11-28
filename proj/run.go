@@ -10,9 +10,9 @@ import (
 
 /* main */
 
-func run(context Context, envConfig string, path string) error {
-	log.Printf("run(%#v, %#v, %#v)", context, envConfig, path)
-	config, err := loadConfig(envConfig)
+func run(context Context, configFilename string, path string) error {
+	log.Printf("run(%#v, %#v, %#v)", context, configFilename, path)
+	config, err := loadConfig(configFilename)
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func run(context Context, envConfig string, path string) error {
 func Main() error {
 	verbose := flag.Bool("v", false, "enable verbose logging")
 	cfd := flag.Int("cfd", 0, "(internal use only)")
-	envConfig := flag.String("env-config", "", "(internal use only)")
+	configFilename := flag.String("config", "", "(internal use only)")
 
 	flag.Parse()
 
@@ -60,7 +60,7 @@ func Main() error {
 	if err != nil {
 		return err
 	}
-	err = run(context, *envConfig, path)
+	err = run(context, *configFilename, path)
 	if err != nil {
 		return err
 	}

@@ -20,12 +20,12 @@ func (c Config) String() string {
 		c.Filename, c.Children, c.Modifiers)
 }
 
-func loadConfig(envConfig string) (Config, error) {
+func loadConfig(configFilename string) (Config, error) {
 	var config Config
 	var filename string
 
-	if len(envConfig) > 0 {
-		filename = envConfig
+	if len(configFilename) > 0 {
+		filename = configFilename
 	} else {
 		wd, err := os.Getwd()
 		if err != nil {
