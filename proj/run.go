@@ -3,6 +3,7 @@ package proj
 import (
 	"flag"
 	"fmt"
+	"github.com/djmitche/proj/proj/child"
 	"github.com/djmitche/proj/proj/config"
 	"github.com/djmitche/proj/proj/shell"
 	"io/ioutil"
@@ -31,9 +32,9 @@ func run(context shell.Context, configFilename string, path string) error {
 	} else {
 		i := strings.Index(path, "/")
 		if i < 0 {
-			err = StartChild(config, context, path, "")
+			err = child.StartChild(config, context, path, "", run)
 		} else {
-			err = StartChild(config, context, path[:i], path[i+1:])
+			err = child.StartChild(config, context, path[:i], path[i+1:], run)
 		}
 	}
 

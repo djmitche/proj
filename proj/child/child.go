@@ -1,4 +1,4 @@
-package proj
+package child
 
 import (
 	"fmt"
@@ -9,10 +9,12 @@ import (
 	"os"
 )
 
+type recurseFunc func(context shell.Context, configFilename string, path string) error
+
 /* child handling */
 
 type Child interface {
-	Start(config *config.Config, context shell.Context, path string) error
+	Start(config *config.Config, context shell.Context, path string, recurse recurseFunc) error
 }
 
 type childFactory func(interface{}) (Child, error)
@@ -52,14 +54,14 @@ func newCdChild(args interface{}) (Child, error) {
 	return &child, nil
 }
 
-func (child *cdChild) Start(config *config.Config, context shell.Context, path string) error {
+func (child *cdChild) Start(config *config.Config, context shell.Context, path string, recurse recurseFunc) error {
 	err := os.Chdir(child.dir)
 	if err != nil {
 		return err
 	}
 
 	// re-run from the top, in the same process
-	return run(context, child.configFilename, path)
+	return recurse(context, child.configFilename, path)
 }
 
 func init() {
@@ -112,7 +114,7 @@ func localReExecute(context shell.Context, path string) error {
 }
 
 // Start the child named by `elt`
-func StartChild(config *config.Config, context shell.Context, elt string, path string) error {
+func StartChild(config *config.Config, context shell.Context, elt string, path string, recurse recurseFunc) error {
 	log.Printf("startChild(%+v, %+v, %+v, %+v)\n", config, context, elt, path)
 	childConfig, ok := config.Children[elt]
 	if !ok {
@@ -127,5 +129,5 @@ func StartChild(config *config.Config, context shell.Context, elt string, path s
 	// add the path element to the context to be handed to the child
 	context.Path = append(context.Path, elt)
 
-	return child.Start(config, context, path)
+	return child.Start(config, context, path, recurse)
 }
