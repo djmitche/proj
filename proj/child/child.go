@@ -4,77 +4,36 @@ import (
 	"fmt"
 	"github.com/djmitche/proj/proj/config"
 	"github.com/djmitche/proj/proj/shell"
-	"github.com/djmitche/proj/proj/util"
 	"log"
-	"os"
 )
 
 type recurseFunc func(context shell.Context, configFilename string, path string) error
 
-/* child handling */
+// information that is useful to each child function
+type childInfo struct {
+	// the name of the child type
+	childType string
 
-type Child interface {
-	Start(config *config.Config, context shell.Context, path string, recurse recurseFunc) error
+	// the args in JSON format
+	args interface{}
+
+	// current configuration
+	config *config.Config
+
+	// current shell contexst
+	context shell.Context
+
+	// remaining proj path after this child
+	path string
+
+	// a pointer to the top-level "run" function, useful for recursing into a child
+	// in the same process
+	recurse recurseFunc
 }
 
-type childFactory func(interface{}) (Child, error)
+type childFunc func(info *childInfo) error
 
-var childFactories map[string]childFactory = make(map[string]childFactory)
-
-type cdChild struct {
-	dir            string
-	configFilename string
-}
-
-func newCdChild(args interface{}) (Child, error) {
-	var child cdChild
-
-	node, ok := util.DefaultChild(args, "dir")
-	if !ok {
-		return nil, fmt.Errorf("no dir specified")
-	}
-	child.dir, ok = node.(string)
-	if !ok {
-		return nil, fmt.Errorf("child dir is not a string")
-	}
-
-	argsMap, ok := args.(map[string]interface{})
-	if ok {
-		configArg, ok := argsMap["config"]
-		if ok {
-			configArgStr, ok := configArg.(string)
-			if ok {
-				child.configFilename = configArgStr
-			} else {
-				return nil, fmt.Errorf("config should be a string")
-			}
-		}
-	}
-
-	return &child, nil
-}
-
-func (child *cdChild) Start(config *config.Config, context shell.Context, path string, recurse recurseFunc) error {
-	err := os.Chdir(child.dir)
-	if err != nil {
-		return err
-	}
-
-	// re-run from the top, in the same process
-	return recurse(context, child.configFilename, path)
-}
-
-func init() {
-	childFactories["cd"] = newCdChild
-}
-
-func newChild(childType string, args interface{}) (Child, error) {
-	factory, ok := childFactories[childType]
-	if !ok {
-		return nil, fmt.Errorf("No such child type %s", childType)
-	}
-	return factory(args)
-}
+var childFuncs map[string]childFunc = make(map[string]childFunc)
 
 // Start the child named by `elt`
 func StartChild(config *config.Config, context shell.Context, elt string, path string, recurse recurseFunc) error {
@@ -84,13 +43,21 @@ func StartChild(config *config.Config, context shell.Context, elt string, path s
 		return fmt.Errorf("No such child %s", elt)
 	}
 
-	child, err := newChild(childConfig.Type, childConfig.Args)
-	if err != nil {
-		return err
+	f, ok := childFuncs[childConfig.Type]
+	if !ok {
+		return fmt.Errorf("No such child type %s", childConfig.Type)
 	}
 
-	// add the path element to the context to be handed to the child
-	context.Path = append(context.Path, elt)
-
-	return child.Start(config, context, path, recurse)
+	err := f(&childInfo{
+		childType: childConfig.Type,
+		args:      childConfig.Args,
+		config:    config,
+		context:   context,
+		path:      path,
+		recurse:   recurse,
+	})
+	if err != nil {
+		return fmt.Errorf("while starting child %q: %s", elt, err)
+	}
+	return nil
 }
