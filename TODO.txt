@@ -1,6 +1,7 @@
 code
 ----
 * tests
+  * travis
 * parse ~/.projrc.yml, too
 * shell quoting
 
@@ -8,6 +9,7 @@ child types
 -----------
 * docker run
 * ec2 instance (start automatically)
+* alias (prepend to path)
 
 modifiers
 ---------
