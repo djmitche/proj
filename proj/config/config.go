@@ -27,7 +27,6 @@ type ChildConfig struct {
 // `../<dirname>-proj.yml`.  If no configuration is found, LoadProjConfig will
 // return an empty configuration (common for "leaf" projects).
 func LoadProjConfig(configFilename string) (*Config, error) {
-	var config Config
 	var filenames []string
 
 	cwd, err := os.Getwd()
@@ -56,13 +55,19 @@ func LoadProjConfig(configFilename string) (*Config, error) {
 	if filename == "" {
 		log.Printf("WARNING: no config file found for %q", cwd)
 		// return a pointer to an empty config
-		return &config, nil
+		return &Config{}, nil
 	}
+
+	return loadProjectConfigFromFile(filename)
+}
+
+func loadProjectConfigFromFile(filename string) (*Config, error) {
+	var config Config
 
 	// load the config file with Viper
 	v := viper.New()
 	v.SetConfigFile(filename)
-	err = v.ReadInConfig()
+	err := v.ReadInConfig()
 	if err != nil {
 		return nil, fmt.Errorf("parsing %q: %s", filename, err)
 	}
