@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"syscall" // TODO: don't use
 )
 
@@ -63,9 +64,13 @@ func (shell *bashShell) execute() error {
 		return err
 	}
 
-	// TODO: search PATH for the shell
-	// TODO: execute a shell script
-	return syscall.Exec("/usr/bin/bash", []string{"bash", "--rcfile", shell.rcFilename, "-i"}, nil)
+	shellPath, err := exec.LookPath("bash")
+	if err != nil {
+		return fmt.Errorf("could not find bash: %s", err)
+	}
+
+	return syscall.Exec(shellPath,
+		[]string{shellPath, "--rcfile", shell.rcFilename, "-i"}, nil)
 }
 
 func doShell(config Config, context Context) error {
@@ -77,15 +82,20 @@ func doShell(config Config, context Context) error {
 
 	shell, err := newBashShell()
 	if err != nil {
-		return err
+		return fmt.Errorf("while creating new shell: %s", err)
 	}
 
 	for _, mod := range context.Modifiers {
 		err = mod.Apply(shell)
 		if err != nil {
-			return err
+			return fmt.Errorf("while applying modifier %q to shell: %s",
+				mod, err)
 		}
 	}
 
-	return shell.execute()
+	err = shell.execute()
+	if err != nil {
+		return fmt.Errorf("while executing shell: %s", err)
+	}
+	return nil
 }
