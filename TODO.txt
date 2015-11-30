@@ -20,6 +20,7 @@ modifiers
 * append to PATH
 * raw shell input
 * gopath (just take a relative path)
+* vimrc modifications
 
 features
 --------
