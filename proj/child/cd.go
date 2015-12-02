@@ -19,7 +19,7 @@ func cdChild(info *childInfo) error {
 		return fmt.Errorf("child dir is not a string")
 	}
 
-	argsMap, ok := info.args.(map[string]interface{})
+	argsMap, ok := info.args.(map[interface{}]interface{})
 	if ok {
 		configArg, ok := argsMap["config"]
 		if ok {

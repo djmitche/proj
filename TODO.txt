@@ -4,6 +4,7 @@ code
   * travis
 * parse ~/.projrc.yml, too
 * shell quoting
+* use internal packages
 
 child types
 -----------

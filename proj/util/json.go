@@ -9,11 +9,11 @@ import (
 // Map, assume that it is the expected value.  This allows things like "cd:
 // somedir" as a shorthand for "cd: dir: somedir".
 func DefaultChild(args interface{}, key string) (interface{}, bool) {
-	m, ok := args.(map[string]interface{})
+	m, ok := args.(map[interface{}]interface{})
 	if !ok {
 		return args, true
 	} else {
-		rv, ok := m[key]
+		rv, ok := m[key].(string)
 		return rv, ok
 	}
 }
