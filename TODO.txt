@@ -26,3 +26,5 @@ modifiers
 features
 --------
 * interpolate path into env var (for prompt)
+* make modifiers exensible from config
+  * this is how I like to make up my prompt
