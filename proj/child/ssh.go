@@ -1,0 +1,88 @@
+package child
+
+import (
+	"fmt"
+	"github.com/djmitche/proj/proj/util"
+	"os"
+	"os/exec"
+)
+
+func sshChild(info *childInfo) error {
+	var host string
+	var configFilename string
+	var user string
+
+	node, ok := util.DefaultChild(info.args, "host")
+	if !ok {
+		return fmt.Errorf("no host specified")
+	}
+	host, ok = node.(string)
+	if !ok {
+		return fmt.Errorf("child host is not a string")
+	}
+
+	argsMap, ok := info.args.(map[interface{}]interface{})
+	if ok {
+		configArg, ok := argsMap["config"]
+		if ok {
+			configArgStr, ok := configArg.(string)
+			if ok {
+				configFilename = configArgStr
+			} else {
+				return fmt.Errorf("config should be a string")
+			}
+		}
+		userArg, ok := argsMap["user"]
+		if ok {
+			userArgStr, ok := userArg.(string)
+			if ok {
+				user = userArgStr
+			} else {
+				return fmt.Errorf("user should be a string")
+			}
+		}
+	}
+
+	// build an ssh command line
+	var sshArgs []string
+	sshPath, err := exec.LookPath("ssh")
+	if err != nil {
+		return fmt.Errorf("'ssh' not found: %s", err)
+	}
+
+	sshArgs = append(sshArgs, sshPath)
+	sshArgs = append(sshArgs, "-t")
+	if user != "" {
+		sshArgs = append(sshArgs, "-l")
+		sshArgs = append(sshArgs, user)
+	}
+	sshArgs = append(sshArgs, host)
+	sshArgs = append(sshArgs, "proj")
+	if configFilename != "" {
+		sshArgs = append(sshArgs, "-config")
+		sshArgs = append(sshArgs, configFilename)
+	}
+	// TODO: support running proj in a subdir
+	sshArgs = append(sshArgs, info.path)
+
+	// run SSH
+	// TODO: it would be great to exec here, but Go doesn't have portable
+	// support for that
+	cmd := exec.Cmd{
+		Path:   sshArgs[0],
+		Args:   sshArgs,
+		Stdin:  os.Stdin,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	}
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("sshing to %s : %s", host, err)
+	}
+
+	return nil
+}
+
+func init() {
+	childFuncs["ssh"] = sshChild
+}
