@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"syscall"
 )
 
 func sshChild(info *childInfo) error {
@@ -92,22 +93,9 @@ func connectBySsh(user, host, configFilename, projPath string, info *childInfo) 
 		sshArgs = append(sshArgs, info.path)
 	}
 
-	// run SSH
-	// TODO: it would be great to exec here, but Go doesn't have portable
-	// support for that
-	cmd := exec.Cmd{
-		Path:   sshArgs[0],
-		Args:   sshArgs,
-		Stdin:  os.Stdin,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("while sshing to %s : %s", host, err)
-	}
-
-	return nil
+	// Exec SSH (POSIX only)
+	err = syscall.Exec(sshArgs[0], sshArgs, os.Environ())
+	return fmt.Errorf("while invoking ssh: %s", host, err)
 }
 
 func init() {
