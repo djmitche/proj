@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/djmitche/proj/proj/ssh"
 	"log"
 	"time"
 )
@@ -110,6 +111,8 @@ func startInstance(instance *ec2.Instance, svc *ec2.EC2) error {
 			return fmt.Errorf("Instance is terminated")
 		}
 	}
+
+	// TODO: wait for SSH port to be open, too
 }
 
 // get the current state for an EC2 instance
@@ -185,7 +188,13 @@ func ec2Child(info *childInfo) error {
 		return fmt.Errorf("while starting instance: %s", err)
 	}
 
-	return connectBySsh(cfg.user, *instance.PublicIpAddress, cfg.config, cfg.projPath, info)
+	return ssh.Run(&ssh.Config{
+		User:           cfg.user,
+		Host:           *instance.PublicIpAddress,
+		ConfigFilename: cfg.config,
+		ProjPath:       cfg.projPath,
+		Path:           info.path,
+	})
 }
 
 func init() {

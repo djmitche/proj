@@ -2,11 +2,8 @@ package child
 
 import (
 	"fmt"
+	"github.com/djmitche/proj/proj/ssh"
 	"github.com/djmitche/proj/proj/util"
-	"log"
-	"os"
-	"os/exec"
-	"syscall"
 )
 
 func sshChild(info *childInfo) error {
@@ -55,47 +52,13 @@ func sshChild(info *childInfo) error {
 		}
 	}
 
-	return connectBySsh(user, host, configFilename, projPath, info)
-}
-
-// XXX also used from ec2Child
-func connectBySsh(user, host, configFilename, projPath string, info *childInfo) error {
-	log.Printf("Connecting to %q via SSH", host)
-
-	// build an ssh command line
-	var sshArgs []string
-	sshPath, err := exec.LookPath("ssh")
-	if err != nil {
-		return fmt.Errorf("'ssh' not found: %s", err)
-	}
-
-	sshArgs = append(sshArgs, sshPath)
-	sshArgs = append(sshArgs, "-t")
-	if user != "" {
-		sshArgs = append(sshArgs, "-l")
-		sshArgs = append(sshArgs, user)
-	}
-	sshArgs = append(sshArgs, host)
-	sshArgs = append(sshArgs, projPath)
-	if configFilename != "" {
-		sshArgs = append(sshArgs, "-config")
-		sshArgs = append(sshArgs, configFilename)
-	}
-
-	// TODO: support running proj in a subdir on the remote system
-
-	// TODO: support setting ForwardAgent
-
-	// add the path, quoting it for ssh if necessary
-	if info.path == "" {
-		sshArgs = append(sshArgs, "''")
-	} else {
-		sshArgs = append(sshArgs, info.path)
-	}
-
-	// Exec SSH (POSIX only)
-	err = syscall.Exec(sshArgs[0], sshArgs, os.Environ())
-	return fmt.Errorf("while invoking ssh: %s", host, err)
+	return ssh.Run(&ssh.Config{
+		User:           user,
+		Host:           host,
+		ConfigFilename: configFilename,
+		ProjPath:       projPath,
+		Path:           info.path,
+	})
 }
 
 func init() {
