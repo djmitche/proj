@@ -3,6 +3,7 @@ package child
 import (
 	"fmt"
 	"github.com/djmitche/proj/proj/util"
+	"log"
 	"os"
 	"os/exec"
 )
@@ -11,6 +12,7 @@ func sshChild(info *childInfo) error {
 	var host string
 	var configFilename string
 	var user string
+	var projPath = "proj"
 
 	node, ok := util.DefaultChild(info.args, "host")
 	if !ok {
@@ -41,7 +43,23 @@ func sshChild(info *childInfo) error {
 				return fmt.Errorf("user should be a string")
 			}
 		}
+		projArg, ok := argsMap["proj"]
+		if ok {
+			projArgStr, ok := projArg.(string)
+			if ok {
+				projPath = projArgStr
+			} else {
+				return fmt.Errorf("proj should be a string")
+			}
+		}
 	}
+
+	return connectBySsh(user, host, configFilename, projPath, info)
+}
+
+// XXX also used from ec2Child
+func connectBySsh(user, host, configFilename, projPath string, info *childInfo) error {
+	log.Printf("Connecting to %q via SSH", host)
 
 	// build an ssh command line
 	var sshArgs []string
@@ -57,13 +75,22 @@ func sshChild(info *childInfo) error {
 		sshArgs = append(sshArgs, user)
 	}
 	sshArgs = append(sshArgs, host)
-	sshArgs = append(sshArgs, "proj")
+	sshArgs = append(sshArgs, projPath)
 	if configFilename != "" {
 		sshArgs = append(sshArgs, "-config")
 		sshArgs = append(sshArgs, configFilename)
 	}
-	// TODO: support running proj in a subdir
-	sshArgs = append(sshArgs, info.path)
+
+	// TODO: support running proj in a subdir on the remote system
+
+	// TODO: support setting ForwardAgent
+
+	// add the path, quoting it for ssh if necessary
+	if info.path == "" {
+		sshArgs = append(sshArgs, "''")
+	} else {
+		sshArgs = append(sshArgs, info.path)
+	}
 
 	// run SSH
 	// TODO: it would be great to exec here, but Go doesn't have portable
@@ -77,7 +104,7 @@ func sshChild(info *childInfo) error {
 	}
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("sshing to %s : %s", host, err)
+		return fmt.Errorf("while sshing to %s : %s", host, err)
 	}
 
 	return nil
