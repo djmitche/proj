@@ -23,8 +23,13 @@ modifiers
 * gopath (just take a relative path)
 * vimrc modifications
 
-features
---------
-* interpolate path into env var (for prompt)
-* make modifiers exensible from config
-  * this is how I like to make up my prompt
+organization
+------------
+
+Refactor as a glorified "cd":
+ - can span hosts / containers
+ - can specify a bashrc (so the rest is up to you)
+
+So, needs to be paired with:
+ - dotfiles, for shell scripts
+ - Ansible, for host configuration
