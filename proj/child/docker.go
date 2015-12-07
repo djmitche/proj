@@ -60,11 +60,7 @@ func run(cfg *dockerConfig, info *childInfo) error {
 
 	// TODO: support running proj in a subdir in the image
 
-	if info.path == "" {
-		dockerArgs = append(dockerArgs, "''")
-	} else {
-		dockerArgs = append(dockerArgs, info.path)
-	}
+	dockerArgs = append(dockerArgs, info.path)
 
 	log.Println(dockerArgs)
 
