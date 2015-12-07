@@ -88,7 +88,11 @@ func loadProjectConfigFromFile(filename string) (*Config, error) {
 	// parse shell modifiers
 	if v.IsSet("shell") {
 		modifiers := v.Get("shell")
-		config.Modifiers = modifiers.([]interface{})
+		var ok bool
+		config.Modifiers, ok = modifiers.([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("'shell' is not a list")
+		}
 	} else {
 		config.Modifiers = make([]interface{}, 0)
 	}
