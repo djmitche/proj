@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/djmitche/proj/proj/ssh"
 	"log"
+	"net"
 	"time"
 )
 
@@ -76,6 +77,7 @@ func startInstance(instance *ec2.Instance, svc *ec2.EC2) error {
 	instanceId := *instance.InstanceId
 
 	// wait until the state is anything but "pending"
+statePoll:
 	for {
 		state, err := getInstanceState(instanceId, svc)
 		if err != nil {
@@ -90,7 +92,7 @@ func startInstance(instance *ec2.Instance, svc *ec2.EC2) error {
 
 		case "running":
 			// running is the state we want to get to
-			return nil
+			break statePoll
 
 		case "stopped":
 			log.Printf("starting instance %s", instanceId)
@@ -112,7 +114,19 @@ func startInstance(instance *ec2.Instance, svc *ec2.EC2) error {
 		}
 	}
 
-	// TODO: wait for SSH port to be open, too
+	// wait for SSH port to be open, too
+	for {
+		conn, err := net.Dial("tcp", fmt.Sprintf("%s:22", *instance.PublicIpAddress))
+		if err != nil {
+			log.Printf("connecting to port 22: %s; retrying", err)
+			time.Sleep(time.Second / 2)
+		} else {
+			conn.Close()
+			break
+		}
+	}
+
+	return nil
 }
 
 // get the current state for an EC2 instance
