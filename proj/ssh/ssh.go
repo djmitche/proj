@@ -2,6 +2,7 @@ package ssh
 
 import (
 	"fmt"
+	"github.com/djmitche/shquote"
 	"log"
 	"os"
 	"os/exec"
@@ -37,23 +38,21 @@ func Run(cfg *Config) error {
 		sshArgs = append(sshArgs, cfg.User)
 	}
 	sshArgs = append(sshArgs, cfg.Host)
-	sshArgs = append(sshArgs, cfg.ProjPath)
+
+	// ssh runs the command by taking all of the arguments ssh itself got,
+	// joining them with spaces, and handing them to `sh -c`.  So we need to
+	// include quoted strings from here on out.
+	sshArgs = append(sshArgs, shquote.Quote(cfg.ProjPath))
 	if cfg.ConfigFilename != "" {
 		sshArgs = append(sshArgs, "-config")
-		sshArgs = append(sshArgs, cfg.ConfigFilename)
+		sshArgs = append(sshArgs, shquote.Quote(cfg.ConfigFilename))
 	}
 
 	// TODO: support running proj in a subdir on the remote system
 
 	// TODO: support setting ForwardAgent
 
-	// add the path, quoting it for ssh if necessary
-	// TODO: better quoting
-	if cfg.Path == "" {
-		sshArgs = append(sshArgs, "''")
-	} else {
-		sshArgs = append(sshArgs, cfg.Path)
-	}
+	sshArgs = append(sshArgs, shquote.Quote(cfg.Path))
 
 	// Exec SSH (POSIX only)
 	err = syscall.Exec(sshArgs[0], sshArgs, os.Environ())
