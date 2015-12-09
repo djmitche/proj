@@ -53,7 +53,7 @@ func findInstance(cfg *ec2Config, svc *ec2.EC2) (*ec2.Instance, error) {
 			{
 				Name: aws.String("tag:Name"),
 				Values: []*string{
-					aws.String("buildbot-micro"),
+					aws.String(cfg.name),
 				},
 			},
 		},
