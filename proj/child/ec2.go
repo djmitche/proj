@@ -72,7 +72,7 @@ func findInstance(cfg *ec2Config, svc *ec2.EC2) (*ec2.Instance, error) {
 	return resp.Reservations[0].Instances[0], nil
 }
 
-func startInstance(instance *ec2.Instance, svc *ec2.EC2) error {
+func startInstance(cfg *ec2Config, instance *ec2.Instance, svc *ec2.EC2) error {
 	startCalled := false
 	instanceId := *instance.InstanceId
 
@@ -116,6 +116,15 @@ statePoll:
 
 	// wait for SSH port to be open, too
 	for {
+		// re-search for the instance, since it probably didn't have a public ip address
+		// when it was disconnected -- TODO refactor
+		if instance.PublicIpAddress == nil {
+			var err error
+			instance, err = findInstance(cfg, svc)
+			if err != nil {
+				return fmt.Errorf("while searcihng for running instance: %s", err)
+			}
+		}
 		conn, err := net.Dial("tcp", fmt.Sprintf("%s:22", *instance.PublicIpAddress))
 		if err != nil {
 			log.Printf("connecting to port 22: %s; retrying", err)
@@ -197,9 +206,17 @@ func ec2Child(info *childInfo) error {
 	}
 	log.Printf("Found instance id %s (type %s)", *instance.InstanceId, *instance.InstanceType)
 
-	err = startInstance(instance, svc)
+	err = startInstance(&cfg, instance, svc)
 	if err != nil {
 		return fmt.Errorf("while starting instance: %s", err)
+	}
+
+	// re-fetch the instance to get an IP address
+	if instance.PublicIpAddress == nil {
+		instance, err = findInstance(&cfg, svc)
+		if err != nil {
+			return fmt.Errorf("while searcihng for running instance: %s", err)
+		}
 	}
 
 	return ssh.Run(&ssh.Config{
