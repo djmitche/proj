@@ -11,8 +11,10 @@ import (
 
 type Config struct {
 	// connection information
-	User string
-	Host string
+	User            string
+	Host            string
+	ForwardAgent    bool
+	IgnoreHostsFile bool
 
 	// remote proj configuration
 	ProjPath       string
@@ -33,10 +35,22 @@ func Run(cfg *Config) error {
 
 	sshArgs = append(sshArgs, sshPath)
 	sshArgs = append(sshArgs, "-t")
+
 	if cfg.User != "" {
 		sshArgs = append(sshArgs, "-l")
 		sshArgs = append(sshArgs, cfg.User)
 	}
+
+	if cfg.ForwardAgent {
+		sshArgs = append(sshArgs, "-o")
+		sshArgs = append(sshArgs, "ForwardAgent=yes")
+	}
+
+	if cfg.IgnoreHostsFile {
+		sshArgs = append(sshArgs, "-o")
+		sshArgs = append(sshArgs, "StrictHostKeyChecking=no")
+	}
+
 	sshArgs = append(sshArgs, cfg.Host)
 
 	// ssh runs the command by taking all of the arguments ssh itself got,
@@ -49,8 +63,6 @@ func Run(cfg *Config) error {
 	}
 
 	// TODO: support running proj in a subdir on the remote system
-
-	// TODO: support setting ForwardAgent
 
 	sshArgs = append(sshArgs, shquote.Quote(cfg.Path))
 

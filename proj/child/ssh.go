@@ -55,6 +55,7 @@ func sshChild(info *childInfo) error {
 	return ssh.Run(&ssh.Config{
 		User:           user,
 		Host:           host,
+		ForwardAgent:   true,
 		ConfigFilename: configFilename,
 		ProjPath:       projPath,
 		Path:           info.path,

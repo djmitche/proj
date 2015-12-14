@@ -220,11 +220,13 @@ func ec2Child(info *childInfo) error {
 	}
 
 	return ssh.Run(&ssh.Config{
-		User:           cfg.user,
-		Host:           *instance.PublicIpAddress,
-		ConfigFilename: cfg.config,
-		ProjPath:       cfg.projPath,
-		Path:           info.path,
+		User:            cfg.user,
+		Host:            *instance.PublicIpAddress,
+		ForwardAgent:    true,
+		IgnoreHostsFile: true, // dynamic IP -> no sense in checking hosts
+		ConfigFilename:  cfg.config,
+		ProjPath:        cfg.projPath,
+		Path:            info.path,
 	})
 }
 
