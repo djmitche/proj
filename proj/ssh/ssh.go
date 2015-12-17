@@ -53,10 +53,15 @@ func Run(cfg *Config) error {
 
 	sshArgs = append(sshArgs, cfg.Host)
 
+	projPath := cfg.ProjPath
+	if projPath == "" {
+		projPath = "proj"
+	}
+
 	// ssh runs the command by taking all of the arguments ssh itself got,
 	// joining them with spaces, and handing them to `sh -c`.  So we need to
 	// include quoted strings from here on out.
-	sshArgs = append(sshArgs, shquote.Quote(cfg.ProjPath))
+	sshArgs = append(sshArgs, shquote.Quote(projPath))
 	if cfg.ConfigFilename != "" {
 		sshArgs = append(sshArgs, "-config")
 		sshArgs = append(sshArgs, shquote.Quote(cfg.ConfigFilename))
