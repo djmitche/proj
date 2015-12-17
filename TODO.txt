@@ -3,17 +3,25 @@ code
 * tests
   * travis
 * parse ~/.projrc.yml, too
-* shell quoting
 * use internal packages
 
 child types
 -----------
 * docker run
-* ec2 instance (start automatically)
-* alias (prepend to path)
 
-modifiers
----------
+features
+--------
+* child alias (prepend to path)
+* default child (so e.g., `bb` can open `bb/buildbot` by default, but
+  `bb/infra` goes to infra)
+* specify subdir when ssh'ing (so can use p/)
+* run the last `.projrc` detected? or just always run ~/.projrc shell script?
+  or get that from ~/.projrc.yml?
+* better config format that can be edited by Ansible -- .proj-<child>.yml?
+* default to 'cd' when no child config is found
+
+modifiers (these will be in shell code)
+---------------------------------------
 * npm environment?
 * ruby environment?
 * enable git prompt
