@@ -40,16 +40,18 @@ Development environments are as unique as developers (well, more -- diversity is
 
 ## Host-level
 
-On each host, proj looks for configuration in `~/.projrc`.
+On each host, proj looks for configuration in `~/.proj.cfg`.
 The file format is like an INI file, similar to `gitconfig`.
 
 It has the following sections:
 
 ### ec2
 
-Each `ssh` section specifies a host to connect to (but not automatically start)
+Each `ssh` section specifies a host to connect to (but not automatically start).
+The hostname defaults to the section name.
 
-    [ssh "myhost.foo.com"]
+    [ssh myhost]
+    hostname = "myhost.foo.com"
     # connection information
     user = dustin
     proj-path = /usr/local/bin/proj  # optional path to proj binary on the instance
@@ -65,13 +67,13 @@ Each `ec2` section specifies an EC2 instance which can be started on demand with
     region = us-east-1
     name = devel-instance  # instance name ("Name" tag)
 
-in addition to the SSH section options given above.
+in addition to the SSH section options (with the exception of hostname) given above.
 
 ## Children
 
 Proj searches for a child project `childproj` as follows, starting in the current directory:
 
- * If `.proj/childproj` exists, it is read to determine the configuration of the child project.
+ * If `.proj/childproj.cfg` exists, it is read to determine the configuration of the child project.
  * If a subdirectory named `childproj` exists, proj treats that directory as the child project.
 
 When there are no more path components, proj implicitly looks for a child project named `DEFAULT`.
