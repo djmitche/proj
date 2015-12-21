@@ -93,3 +93,10 @@ func TestFullConfig(t *testing.T) {
 		t.Errorf("got incorrect SshHostConfig %#v", config.Ec2["foo"])
 	}
 }
+
+func TestInvalidName(t *testing.T) {
+	_, err := loadTestConfig(fullConfig + "\ninvalid-name = bar")
+	if err == nil {
+		t.Errorf("should have failed")
+	}
+}

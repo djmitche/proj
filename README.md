@@ -79,8 +79,12 @@ Proj searches for a child project `childproj` as follows, starting in the curren
 When there are no more path components, proj implicitly looks for a child project named `DEFAULT`.
 This allows short paths for the most common projects; for example, `proj moz` might correspond to a Gecko development project, while `proj moz/mig` opens the Mozilla InvestiGator development environment.
 
-Each child configuration file has a "type" key, chosen from the child types below.
-The following keys are optional:
+Each child configuration file begins with the child type as a section header, chosen from the child types below, followed by optional keys
+
+    [cd]
+    dir = devel/bar-project
+
+The following keys are optional for all child types
 
     # prepend this path to the project path given to the child project
     prepend = extra/path
@@ -90,16 +94,15 @@ The following keys are optional:
 
 ### cd
 
-The `cd` child type also accepts a `dir` key giving the directory of the child project.
-If this is omitted, the name of the child project is used.
+The `cd` child type requires a `dir` key giving the directory of the child project.
 
 ### ssh
 
-The `ssh` child type also accepts a `host` key which refers to an `ssh` section in the host configuration file.
+The `ssh` child type requires a `host` key which refers to an `ssh` section in the host configuration file.
 
 ### ec2
 
-The `ec2` child type accepts an `instance` key which refers to an `ec2` section in the host configuration.
+The `ec2` child type requires an `instance` key which refers to an `ec2` section in the host configuration.
 
 ### docker
 
