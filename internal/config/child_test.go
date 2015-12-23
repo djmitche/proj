@@ -36,7 +36,7 @@ func TestSimpleConfig(t *testing.T) {
 		t.Errorf("That came out wrong: %#v", config)
 	}
 
-	if config.Common != &config.Ssh.ChildCommonConfig {
+	if config.Common() != &config.Ssh.ChildCommonConfig {
 		t.Errorf("config.Common pointer is wrong")
 	}
 }
