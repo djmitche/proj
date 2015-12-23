@@ -4,3 +4,5 @@ code
   * travis
 * parse ~/.projrc.yml, too
 * use internal packages
+* feature: ssh -o UserKnownHostsFile=/dev/null for EC2 connections
+* if starting a child fails, open a shell instead

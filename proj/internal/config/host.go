@@ -3,14 +3,16 @@ package config
 import (
 	"fmt"
 	"gopkg.in/gcfg.v1"
+	"os"
 	"os/user"
 	"path"
 )
 
 type SshCommonConfig struct {
-	User          string
-	Proj_Path     string
-	Forward_Agent bool
+	User                     string
+	Proj_Path                string
+	Forward_Agent            bool
+	Strict_Host_Key_Checking string
 }
 
 type SshHostConfig struct {
@@ -47,9 +49,14 @@ func LoadHostConfig() (*HostConfig, error) {
 	filename := path.Join(homedir, ".proj.cfg")
 
 	var config HostConfig
-	err = gcfg.ReadFileInto(&config, filename)
-	if err != nil {
-		return nil, fmt.Errorf("While reading %q: %s", filename, err)
+
+	// read the config, if it exists
+	_, err = os.Stat(filename)
+	if err == nil {
+		err = gcfg.ReadFileInto(&config, filename)
+		if err != nil {
+			return nil, fmt.Errorf("While reading %q: %s", filename, err)
+		}
 	}
 
 	return &config, nil

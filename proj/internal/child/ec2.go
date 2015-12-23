@@ -6,54 +6,45 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/djmitche/proj/proj/ssh"
+	"github.com/djmitche/proj/proj/internal/config"
+	"github.com/djmitche/proj/proj/internal/ssh"
 	"log"
 	"net"
 	"time"
 )
 
-type ec2Config struct {
-	// ec2 API access
-	id     string
-	secret string
-
-	// instance identifier
-	region string
-	name   string
-
-	// access information
-	user     string
-	config   string
-	projPath string
-}
-
-func setupEc2(cfg *ec2Config) (*ec2.EC2, error) {
+func setupEc2(ec2HostConfig *config.Ec2HostConfig, childConfig *config.ChildConfig) (*ec2.EC2, error) {
 	var creds *credentials.Credentials
 
-	if cfg.id != "" {
-		if cfg.secret == "" {
+	if ec2HostConfig.Access_Key != "" {
+		if ec2HostConfig.Secret_Key == "" {
 			return nil, fmt.Errorf("config includes ec2 id but not secret")
 		}
-		creds = credentials.NewStaticCredentials(cfg.id, cfg.secret, "")
+		creds = credentials.NewStaticCredentials(
+			ec2HostConfig.Access_Key,
+			ec2HostConfig.Secret_Key,
+			"")
 	}
 
 	svc := ec2.New(session.New(), &aws.Config{
-		Region:      aws.String(cfg.region),
+		Region:      aws.String(ec2HostConfig.Region),
 		Credentials: creds})
 
-	log.Printf("Connected to EC2 in region %s", cfg.region)
+	log.Printf("Connected to EC2 in region %s", ec2HostConfig.Region)
 	return svc, nil
 }
 
-func findInstance(cfg *ec2Config, svc *ec2.EC2) (*ec2.Instance, error) {
-	log.Printf("Searching for instance named %q in region %s", cfg.name, cfg.region)
+func findInstance(ec2HostConfig *config.Ec2HostConfig, svc *ec2.EC2) (*ec2.Instance, error) {
+	region, name := ec2HostConfig.Region, ec2HostConfig.Name
+
+	log.Printf("Searching for instance named %q in region %s", name, region)
 
 	params := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
 			{
 				Name: aws.String("tag:Name"),
 				Values: []*string{
-					aws.String(cfg.name),
+					aws.String(ec2HostConfig.Name),
 				},
 			},
 		},
@@ -64,15 +55,15 @@ func findInstance(cfg *ec2Config, svc *ec2.EC2) (*ec2.Instance, error) {
 	}
 
 	if len(resp.Reservations) < 1 {
-		return nil, fmt.Errorf("no instance found in %s with name %s", cfg.region, cfg.name)
+		return nil, fmt.Errorf("no instance found in %s with name %s", region, name)
 	}
 	if len(resp.Reservations) > 1 || len(resp.Reservations[0].Instances) != 1 {
-		return nil, fmt.Errorf("multiple instances found in %s with name %s", cfg.region, cfg.name)
+		return nil, fmt.Errorf("multiple instances found in %s with name %s", region, name)
 	}
 	return resp.Reservations[0].Instances[0], nil
 }
 
-func startInstance(cfg *ec2Config, instance *ec2.Instance, svc *ec2.EC2) error {
+func startInstance(ec2HostConfig *config.Ec2HostConfig, instance *ec2.Instance, svc *ec2.EC2) error {
 	startCalled := false
 	instanceId := *instance.InstanceId
 
@@ -120,7 +111,7 @@ statePoll:
 		// when it was disconnected -- TODO refactor
 		if instance.PublicIpAddress == nil {
 			var err error
-			instance, err = findInstance(cfg, svc)
+			instance, err = findInstance(ec2HostConfig, svc)
 			if err != nil {
 				return fmt.Errorf("while searcihng for running instance: %s", err)
 			}
@@ -158,76 +149,38 @@ func getInstanceState(instanceId string, svc *ec2.EC2) (string, error) {
 }
 
 func ec2Child(info *childInfo) error {
-	var cfg ec2Config
-
-	argsMap, ok := info.args.(map[interface{}]interface{})
+	instanceName := info.childConfig.Ec2.Instance
+	ec2HostConfig, ok := info.hostConfig.Ec2[instanceName]
 	if !ok {
-		return fmt.Errorf("ec2 child must at least have keys 'region' and 'name'")
+		return fmt.Errorf("EC2 instance %q not defined in configuration file", instanceName)
 	}
 
-	var cfgFields = []struct {
-		name string
-		val  *string
-	}{
-		{"id", &cfg.id},
-		{"secret", &cfg.secret},
-		{"region", &cfg.region},
-		{"name", &cfg.name},
-		{"user", &cfg.user},
-		{"config", &cfg.config},
-		{"proj", &cfg.projPath},
-	}
-
-	for _, fld := range cfgFields {
-		arg, ok := argsMap[fld.name]
-		if ok {
-			argStr, ok := arg.(string)
-			if ok {
-				*fld.val = argStr
-			} else {
-				return fmt.Errorf("%s should be a string; got %q", fld.name, arg)
-			}
-		}
-	}
-
-	if cfg.region == "" || cfg.name == "" {
-		return fmt.Errorf("ec2 child must at least have keys 'region' and 'name'")
-	}
-
-	svc, err := setupEc2(&cfg)
+	svc, err := setupEc2(ec2HostConfig, info.childConfig)
 	if err != nil {
 		return fmt.Errorf("while setting up ec2 access: %s", err)
 	}
 
 	// look up the instance matching this description
-	instance, err := findInstance(&cfg, svc)
+	instance, err := findInstance(ec2HostConfig, svc)
 	if err != nil {
 		return fmt.Errorf("while searching for ec2 instance: %s", err)
 	}
 	log.Printf("Found instance id %s (type %s)", *instance.InstanceId, *instance.InstanceType)
 
-	err = startInstance(&cfg, instance, svc)
+	err = startInstance(ec2HostConfig, instance, svc)
 	if err != nil {
 		return fmt.Errorf("while starting instance: %s", err)
 	}
 
 	// re-fetch the instance to get an IP address
 	if instance.PublicIpAddress == nil {
-		instance, err = findInstance(&cfg, svc)
+		instance, err = findInstance(ec2HostConfig, svc)
 		if err != nil {
 			return fmt.Errorf("while searcihng for running instance: %s", err)
 		}
 	}
 
-	return ssh.Run(&ssh.Config{
-		User:            cfg.user,
-		Host:            *instance.PublicIpAddress,
-		ForwardAgent:    true,
-		IgnoreHostsFile: true, // dynamic IP -> no sense in checking hosts
-		ConfigFilename:  cfg.config,
-		ProjPath:        cfg.projPath,
-		Path:            info.path,
-	})
+	return ssh.Run(*instance.PublicIpAddress, &ec2HostConfig.SshCommonConfig, info.path)
 }
 
 func init() {

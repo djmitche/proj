@@ -3,9 +3,9 @@ package proj
 import (
 	"flag"
 	"fmt"
-	"github.com/djmitche/proj/proj/child"
-	"github.com/djmitche/proj/proj/config"
-	"github.com/djmitche/proj/proj/shell"
+	"github.com/djmitche/proj/proj/internal/child"
+	"github.com/djmitche/proj/proj/internal/config"
+	"github.com/djmitche/proj/proj/internal/shell"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -13,28 +13,23 @@ import (
 
 /* main */
 
-func run(context *shell.Context, configFilename string, path string) error {
-	log.Printf("run(%#v, %#v, %#v)", context, configFilename, path)
-	config, err := config.LoadProjConfig(configFilename)
-	if err != nil {
-		return err
-	}
+func run(path string) error {
+	log.Printf("run(%#v)", path)
 
-	// incorporate the configuration into the accumulated context
-	err = context.Update(config)
+	hostConfig, err := config.LoadHostConfig()
 	if err != nil {
 		return err
 	}
 
 	// either start a shell or enter the next path element
 	if len(path) == 0 {
-		err = shell.Spawn(context)
+		err = shell.Spawn(nil)
 	} else {
 		i := strings.Index(path, "/")
 		if i < 0 {
-			err = child.StartChild(config, context, path, "", run)
+			err = child.StartChild(hostConfig, path, "", run)
 		} else {
-			err = child.StartChild(config, context, path[:i], path[i+1:], run)
+			err = child.StartChild(hostConfig, path[:i], path[i+1:], run)
 		}
 	}
 
@@ -43,8 +38,6 @@ func run(context *shell.Context, configFilename string, path string) error {
 
 func Main() error {
 	verbose := flag.Bool("v", false, "enable verbose logging")
-	cfd := flag.Int("cfd", 0, "(internal use only)")
-	configFilename := flag.String("config", "", "(internal use only)")
 
 	flag.Parse()
 
@@ -59,13 +52,10 @@ func Main() error {
 
 	path := args[0]
 
-	context, err := shell.LoadContext(*cfd)
+	err := run(path)
 	if err != nil {
 		return err
 	}
-	err = run(context, *configFilename, path)
-	if err != nil {
-		return err
-	}
+
 	return nil
 }

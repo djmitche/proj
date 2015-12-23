@@ -2,6 +2,7 @@ package ssh
 
 import (
 	"fmt"
+	"github.com/djmitche/proj/proj/internal/config"
 	"github.com/djmitche/shquote"
 	"log"
 	"os"
@@ -9,22 +10,9 @@ import (
 	"syscall"
 )
 
-type Config struct {
-	// connection information
-	User            string
-	Host            string
-	ForwardAgent    bool
-	IgnoreHostsFile bool
-
-	// remote proj configuration
-	ProjPath       string
-	ConfigFilename string
-	Path           string
-}
-
 // Run proj via SSH
-func Run(cfg *Config) error {
-	log.Printf("Connecting to %q via SSH", cfg.Host)
+func Run(hostname string, sshConfig *config.SshCommonConfig, path string) error {
+	log.Printf("Connecting to %q via SSH", hostname)
 
 	// build an ssh command line
 	var sshArgs []string
@@ -36,24 +24,24 @@ func Run(cfg *Config) error {
 	sshArgs = append(sshArgs, sshPath)
 	sshArgs = append(sshArgs, "-t")
 
-	if cfg.User != "" {
+	if sshConfig.User != "" {
 		sshArgs = append(sshArgs, "-l")
-		sshArgs = append(sshArgs, cfg.User)
+		sshArgs = append(sshArgs, sshConfig.User)
 	}
 
-	if cfg.ForwardAgent {
+	if sshConfig.Forward_Agent {
 		sshArgs = append(sshArgs, "-o")
 		sshArgs = append(sshArgs, "ForwardAgent=yes")
 	}
 
-	if cfg.IgnoreHostsFile {
+	if sshConfig.Strict_Host_Key_Checking != "" {
 		sshArgs = append(sshArgs, "-o")
-		sshArgs = append(sshArgs, "StrictHostKeyChecking=no")
+		sshArgs = append(sshArgs, "StrictHostKeyChecking="+sshConfig.Strict_Host_Key_Checking)
 	}
 
-	sshArgs = append(sshArgs, cfg.Host)
+	sshArgs = append(sshArgs, hostname)
 
-	projPath := cfg.ProjPath
+	projPath := sshConfig.Proj_Path
 	if projPath == "" {
 		projPath = "proj"
 	}
@@ -62,14 +50,10 @@ func Run(cfg *Config) error {
 	// joining them with spaces, and handing them to `sh -c`.  So we need to
 	// include quoted strings from here on out.
 	sshArgs = append(sshArgs, shquote.Quote(projPath))
-	if cfg.ConfigFilename != "" {
-		sshArgs = append(sshArgs, "-config")
-		sshArgs = append(sshArgs, shquote.Quote(cfg.ConfigFilename))
-	}
 
 	// TODO: support running proj in a subdir on the remote system
 
-	sshArgs = append(sshArgs, shquote.Quote(cfg.Path))
+	sshArgs = append(sshArgs, shquote.Quote(path))
 
 	// Exec SSH (POSIX only)
 	err = syscall.Exec(sshArgs[0], sshArgs, os.Environ())
