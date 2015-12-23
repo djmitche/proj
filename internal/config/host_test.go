@@ -51,7 +51,7 @@ const fullConfig = `
 user = test
 proj-path = /with spaces/
 forward-agent =  yes
-strict-host-key-checking = no
+ignore-known-hosts = yes
 access-key = 123
 secret-key = 456
 region = "us-north-1"
@@ -71,10 +71,10 @@ func TestFullConfig(t *testing.T) {
 
 	if (*config.Ec2["foo"] != Ec2HostConfig{
 		SshCommonConfig: SshCommonConfig{
-			User:                     "test",
-			Proj_Path:                "/with spaces/",
-			Forward_Agent:            true,
-			Strict_Host_Key_Checking: "no",
+			User:               "test",
+			Proj_Path:          "/with spaces/",
+			Forward_Agent:      true,
+			Ignore_Known_Hosts: true,
 		},
 		Access_Key: "123",
 		Secret_Key: "456",
@@ -86,9 +86,10 @@ func TestFullConfig(t *testing.T) {
 
 	if (*config.Ssh["bar"] != SshHostConfig{
 		SshCommonConfig: SshCommonConfig{
-			User:          "test",
-			Proj_Path:     "",
-			Forward_Agent: false,
+			User:               "test",
+			Proj_Path:          "",
+			Forward_Agent:      false,
+			Ignore_Known_Hosts: false,
 		},
 		Hostname: "bar.com",
 	}) {
