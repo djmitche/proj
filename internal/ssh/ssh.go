@@ -34,9 +34,11 @@ func Run(hostname string, sshConfig *config.SshCommonConfig, path string) error 
 		sshArgs = append(sshArgs, "ForwardAgent=yes")
 	}
 
-	if sshConfig.Strict_Host_Key_Checking != "" {
+	if sshConfig.Ignore_Known_Hosts {
 		sshArgs = append(sshArgs, "-o")
-		sshArgs = append(sshArgs, "StrictHostKeyChecking="+sshConfig.Strict_Host_Key_Checking)
+		sshArgs = append(sshArgs, "StrictHostKeyChecking=no")
+		sshArgs = append(sshArgs, "-o")
+		sshArgs = append(sshArgs, "UserKnownHostsFile=/dev/null")
 	}
 
 	sshArgs = append(sshArgs, hostname)
@@ -54,6 +56,8 @@ func Run(hostname string, sshConfig *config.SshCommonConfig, path string) error 
 	// TODO: support running proj in a subdir on the remote system
 
 	sshArgs = append(sshArgs, shquote.Quote(path))
+
+	log.Printf("SSH command line: %q", sshArgs)
 
 	// Exec SSH (POSIX only)
 	err = syscall.Exec(sshArgs[0], sshArgs, os.Environ())

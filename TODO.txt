@@ -1,4 +1,3 @@
 code
 ----
-* feature: ssh -o UserKnownHostsFile=/dev/null for EC2 connections
 * if starting a child fails, open a shell instead

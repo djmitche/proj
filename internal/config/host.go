@@ -9,10 +9,10 @@ import (
 )
 
 type SshCommonConfig struct {
-	User                     string
-	Proj_Path                string
-	Forward_Agent            bool
-	Strict_Host_Key_Checking string
+	User               string
+	Proj_Path          string
+	Forward_Agent      bool
+	Ignore_Known_Hosts bool
 }
 
 type SshHostConfig struct {

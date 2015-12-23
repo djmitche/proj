@@ -55,8 +55,8 @@ The hostname defaults to the section name.
     # connection information
     user = dustin
     proj-path = /usr/local/bin/proj  # optional path to proj binary on the instance
-    forward_agent = no  # defaults to yes
-    strict_host_key_checking = no
+    forward-agent = no  # defaults to yes
+    ignore-known-hosts = yes  # defaults to no; if set, known hosts won't be checked or updated
 
 Each `ec2` section specifies an EC2 instance which can be started on demand with the `ec2` child type.
 
