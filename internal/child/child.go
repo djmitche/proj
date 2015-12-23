@@ -54,6 +54,12 @@ func loadChildConfigFor(elt string) (*config.ChildConfig, error) {
 	return nil, fmt.Errorf("No such child %s", elt)
 }
 
+// Exists returns true if the given child exists
+func Exists(hostConfig *config.HostConfig, elt string) bool {
+	_, err := loadChildConfigFor(elt)
+	return err == nil
+}
+
 // Start the child named by `elt`
 func StartChild(hostConfig *config.HostConfig, elt string, path string, recurse recurseFunc) error {
 	log.Printf("startChild(%+v, %+v, %+v)\n", hostConfig, elt, path)

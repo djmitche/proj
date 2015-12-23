@@ -45,7 +45,7 @@ The file format is like an INI file, similar to `gitconfig`.
 
 It has the following sections:
 
-### ec2
+### ssh
 
 Each `ssh` section specifies a host to connect to (but not automatically start).
 The hostname defaults to the section name.
@@ -57,6 +57,8 @@ The hostname defaults to the section name.
     proj-path = /usr/local/bin/proj  # optional path to proj binary on the instance
     forward-agent = no  # defaults to yes
     ignore-known-hosts = yes  # defaults to no; if set, known hosts won't be checked or updated
+
+### ec2
 
 Each `ec2` section specifies an EC2 instance which can be started on demand with the `ec2` child type.
 
@@ -77,7 +79,7 @@ Proj searches for a child project `childproj` as follows, starting in the curren
  * If `.proj/childproj.cfg` exists, it is read to determine the configuration of the child project.
  * If a subdirectory named `childproj` exists, proj treats that directory as the child project.
 
-When there are no more path components, proj implicitly looks for a child project named `DEFAULT`.
+When there are no more path components, proj implicitly looks for a child project named `DEFAULT`, starting it if present.
 This allows short paths for the most common projects; for example, `proj moz` might correspond to a Gecko development project, while `proj moz/mig` opens the Mozilla InvestiGator development environment.
 
 Each child configuration file begins with the child type as a section header, chosen from the child types below, followed by optional keys

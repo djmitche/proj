@@ -39,7 +39,16 @@ func run(path string) error {
 			err = shell.Spawn(hostConfig)
 		}
 	} else {
-		err = shell.Spawn(hostConfig)
+		// if there is child config for `DEFAULT`, start it
+		if child.Exists(hostConfig, "DEFAULT") {
+			err = child.StartChild(hostConfig, "DEFAULT", "", run)
+			// falling back to a local shell
+			if err != nil {
+				err = shell.Spawn(hostConfig)
+			}
+		} else {
+			err = shell.Spawn(hostConfig)
+		}
 	}
 
 	return err
