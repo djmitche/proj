@@ -2,7 +2,7 @@ package child
 
 import (
 	"fmt"
-	"github.com/djmitche/proj/proj/internal/ssh"
+	"github.com/djmitche/proj/internal/ssh"
 )
 
 func sshChild(info *childInfo) error {

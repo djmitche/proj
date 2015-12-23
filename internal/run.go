@@ -3,9 +3,9 @@ package proj
 import (
 	"flag"
 	"fmt"
-	"github.com/djmitche/proj/proj/internal/child"
-	"github.com/djmitche/proj/proj/internal/config"
-	"github.com/djmitche/proj/proj/internal/shell"
+	"github.com/djmitche/proj/internal/child"
+	"github.com/djmitche/proj/internal/config"
+	"github.com/djmitche/proj/internal/shell"
 	"io/ioutil"
 	"log"
 	"strings"

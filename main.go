@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/djmitche/proj/proj"
+	"github.com/djmitche/proj/internal"
 	"log"
 	"os"
 )

@@ -3,7 +3,7 @@ package child
 
 import (
 	"fmt"
-	"github.com/djmitche/proj/proj/internal/config"
+	"github.com/djmitche/proj/internal/config"
 	"log"
 	"os"
 	"path"
