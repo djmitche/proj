@@ -17,7 +17,7 @@ So `proj moz/cloud-tools` begins by looking for the child project `moz`.
 
 Based on the configuration for that child project, the tool may perform some setup or connect to another host.
 Once that is done, it continues on to the next path component.
-When all path components are processed, it starts a shell, with a few simple hooks allowing you to set up the project's development environment.
+When all path components are processed (or when an error occurs), it starts a shell, with a few simple hooks allowing you to set up the project's development environment.
 
 # Usage
 
@@ -33,7 +33,7 @@ With multiple hosts and lots of develpoment environments, you'll probably want t
 
 ## Shell scripts
 
-You'll need to write some shell scripts to coordinate development environment setup.
+You'll need to write some shell scripts (starting with `.projrc` in each project directory) to coordinate development environment setup.
 Development environments are as unique as developers (well, more -- diversity is not software engineering's strong point just yet), so you're on your own here.
 
 # Configuration

@@ -1,3 +1,0 @@
-code
-----
-* if starting a child fails, open a shell instead

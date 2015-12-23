@@ -14,7 +14,9 @@ import (
 /* main */
 
 func run(path string) error {
-	log.Printf("run(%#v)", path)
+	var err error
+
+	log.Printf("run(%q)", path)
 
 	hostConfig, err := config.LoadHostConfig()
 	if err != nil {
@@ -22,15 +24,22 @@ func run(path string) error {
 	}
 
 	// either start a shell or enter the next path element
-	if len(path) == 0 {
-		err = shell.Spawn(nil)
-	} else {
+	if len(path) > 0 {
+		var elt, remaining string
 		i := strings.Index(path, "/")
 		if i < 0 {
-			err = child.StartChild(hostConfig, path, "", run)
+			elt, remaining = path, ""
 		} else {
-			err = child.StartChild(hostConfig, path[:i], path[i+1:], run)
+			elt, remaining = path[:i], path[i+1:]
 		}
+		err = child.StartChild(hostConfig, elt, remaining, run)
+		if err != nil {
+			fmt.Printf("While starting child %s: %s\n", elt, err)
+			// try to start a shell here
+			err = shell.Spawn(hostConfig)
+		}
+	} else {
+		err = shell.Spawn(hostConfig)
 	}
 
 	return err
