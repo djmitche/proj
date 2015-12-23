@@ -91,7 +91,7 @@ The following keys are optional for all child types
     prepend = extra/path
     # rcfile to invoke for the child, if it is the last element
     # (defaults to .projrc, relative to proj dir)
-    shellrc = shell-setup.sh
+    shellrc = shell-setup.sh  # not supported yet
 
 ### cd
 

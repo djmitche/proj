@@ -7,7 +7,7 @@ import (
 
 type ChildCommonConfig struct {
 	Prepend string
-	Shellrc string
+	//Shellrc string -- TODO
 }
 
 type ChildConfig struct {
@@ -27,6 +27,19 @@ type ChildConfig struct {
 	}
 }
 
+func (cc *ChildConfig) Common() *ChildCommonConfig {
+	switch cc.Type {
+	case "cd":
+		return &cc.Cd.ChildCommonConfig
+	case "ssh":
+		return &cc.Ssh.ChildCommonConfig
+	case "ec2":
+		return &cc.Ec2.ChildCommonConfig
+	default:
+		panic("Invalid child config type")
+	}
+}
+
 func LoadChildConfig(filename string) (*ChildConfig, error) {
 	var config ChildConfig
 	err := gcfg.ReadFileInto(&config, filename)
@@ -39,12 +52,12 @@ func LoadChildConfig(filename string) (*ChildConfig, error) {
 	// each type having a mandatory, distinct key.
 	if config.Cd.Dir != "" {
 		config.Type = "cd"
-	}
-	if config.Ssh.Host != "" {
+	} else if config.Ssh.Host != "" {
 		config.Type = "ssh"
-	}
-	if config.Ec2.Instance != "" {
+	} else if config.Ec2.Instance != "" {
 		config.Type = "ec2"
+	} else {
+		return nil, fmt.Errorf("Unknown child type")
 	}
 
 	return &config, nil

@@ -56,14 +56,23 @@ func loadChildConfigFor(elt string) (*config.ChildConfig, error) {
 
 // Start the child named by `elt`
 func StartChild(hostConfig *config.HostConfig, elt string, path string, recurse recurseFunc) error {
-	log.Printf("startChild(%+v, %+v, %+v, %+v)\n", hostConfig, elt, path)
+	log.Printf("startChild(%+v, %+v, %+v)\n", hostConfig, elt, path)
 
 	childConfig, err := loadChildConfigFor(elt)
 	if err != nil {
 		return fmt.Errorf("No such child %s", elt)
 	}
 
-	// TODO: apply common stuff here: prepend
+	// apply `prepend` regardless of child type
+	prepend := childConfig.Common().Prepend
+	if prepend != "" {
+		log.Printf("prepending %q", prepend)
+		if path == "" {
+			path = prepend
+		} else {
+			path = prepend + "/" + path
+		}
+	}
 
 	f, ok := childFuncs[childConfig.Type]
 	if !ok {
