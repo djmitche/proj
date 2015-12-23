@@ -55,7 +55,7 @@ The hostname defaults to the section name.
     # connection information
     user = dustin
     proj-path = /usr/local/bin/proj  # optional path to proj binary on the instance
-    forward-agent = no  # defaults to yes
+    forward-agent = yes  # defaults to no
     ignore-known-hosts = yes  # defaults to no; if set, known hosts won't be checked or updated
 
 ### ec2
