@@ -33,8 +33,15 @@ With multiple hosts and lots of develpoment environments, you'll probably want t
 
 ## Shell scripts
 
-You'll need to write some shell scripts (starting with `.projrc` in each project directory) to coordinate development environment setup.
+You'll need to write some shell scripts to coordinate development environment setup.
 Development environments are as unique as developers (well, more -- diversity is not software engineering's strong point just yet), so you're on your own here.
+
+When starting a shell, Proj searches for a file named `.projrc` (configurable in `~/.proj.cfg`) in the current directory and each enclosing directory until it finds one.
+It then invokes the shell with `--rcfile path/to/.projrc -i`.
+I use bash, so this assumes bash -- sorry!
+
+Note that this does *not* pass the `-l` option to indicate a login shell.
+It is up to `.projrc` to emulate this behavior by sourcing the appropriate files, if desired.
 
 # Configuration
 
@@ -72,6 +79,14 @@ Each `ec2` section specifies an EC2 instance which can be started on demand with
 
 in addition to the SSH section options (with the exception of hostname) given above.
 
+### shell
+
+The `shell` section configures the search for shell initialization files.
+
+    [shell]
+    rcfile = .projrc  # default
+    no-search = true  # true to disable searching up the directory hierarchy
+
 ## Children
 
 Proj searches for a child project `childproj` as follows, starting in the current directory:
@@ -82,7 +97,7 @@ Proj searches for a child project `childproj` as follows, starting in the curren
 When there are no more path components, proj implicitly looks for a child project named `DEFAULT`, starting it if present.
 This allows short paths for the most common projects; for example, `proj moz` might correspond to a Gecko development project, while `proj moz/mig` opens the Mozilla InvestiGator development environment.
 
-Each child configuration file begins with the child type as a section header, chosen from the child types below, followed by optional keys
+Each child configuration file begins with the child type as a section header, chosen from the child types below, followed by optional keys, for example
 
     [cd]
     dir = devel/bar-project
@@ -91,9 +106,6 @@ The following keys are optional for all child types
 
     # prepend this path to the project path given to the child project
     prepend = extra/path
-    # rcfile to invoke for the child, if it is the last element
-    # (defaults to .projrc, relative to proj dir)
-    shellrc = shell-setup.sh  # not supported yet
 
 ### cd
 

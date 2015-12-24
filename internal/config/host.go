@@ -8,6 +8,11 @@ import (
 	"path"
 )
 
+type ShellConfig struct {
+	Rcfile    string
+	No_Search bool
+}
+
 type SshCommonConfig struct {
 	User               string
 	Proj_Path          string
@@ -29,8 +34,9 @@ type Ec2HostConfig struct {
 }
 
 type HostConfig struct {
-	Ssh map[string]*SshHostConfig
-	Ec2 map[string]*Ec2HostConfig
+	Shell ShellConfig
+	Ssh   map[string]*SshHostConfig
+	Ec2   map[string]*Ec2HostConfig
 }
 
 var userHomedir = func() (string, error) {

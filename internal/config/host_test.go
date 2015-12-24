@@ -47,6 +47,10 @@ func TestEmptyConfig(t *testing.T) {
 }
 
 const fullConfig = `
+[shell]
+rcfile = ".proj-bashrc"
+no-search = true
+
 [ec2 "foo"]
 user = test
 proj-path = /with spaces/
@@ -69,6 +73,12 @@ func TestFullConfig(t *testing.T) {
 		t.FailNow()
 	}
 
+	if (config.Shell != ShellConfig{
+		Rcfile:    ".proj-bashrc",
+		No_Search: true,
+	}) {
+		t.Errorf("got incorrect Shell section %#v", config.Shell)
+	}
 	if (*config.Ec2["foo"] != Ec2HostConfig{
 		SshCommonConfig: SshCommonConfig{
 			User:               "test",
