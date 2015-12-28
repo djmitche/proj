@@ -11,7 +11,9 @@ import (
 	"strings"
 )
 
-/* main */
+/* these are filled in by release.sh */
+var Version = "development"
+var Revision = "HEAD"
 
 func run(path string) error {
 	var err error
@@ -55,10 +57,15 @@ func run(path string) error {
 }
 
 func Main() error {
+	version := flag.Bool("V", false, "show version")
 	verbose := flag.Bool("v", false, "enable verbose logging")
 
 	flag.Parse()
 
+	if *version {
+		fmt.Printf("Proj-%s (%s)\n", Version, Revision)
+		return nil
+	}
 	if !*verbose {
 		log.SetOutput(ioutil.Discard)
 	}
