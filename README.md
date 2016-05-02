@@ -79,6 +79,37 @@ Each `ec2` section specifies an EC2 instance which can be started on demand with
 
 in addition to the SSH section options (with the exception of hostname) given above.
 
+The following is the minimal policy that the access/secret key pair must have:
+
+    {
+      "Statement": [
+        {
+          "Resource": [
+            "*"
+          ],
+          "Action": [
+            "ec2:DescribeInstances"
+          ],
+          "Effect": "Allow",
+          "Sid": "Stmt1462218813000"
+        },
+        {
+          "Resource": [
+            "arn:aws:ec2:<region>:<accountNumber>:instance/<instanceId>"
+          ],
+          "Action": [
+            "ec2:StartInstances",
+          ],
+          "Effect": "Allow",
+          "Sid": "Stmt1462218813001"
+        }
+      ],
+      "Version": "2012-10-17"
+    }
+
+Note that this allows DescribeInstances for all instances.  Amazon does not
+provide more granular control of this method.
+
 ### shell
 
 The `shell` section configures the search for shell initialization files.
@@ -118,7 +149,3 @@ The `ssh` child type requires a `host` key which refers to an `ssh` section in t
 ### ec2
 
 The `ec2` child type requires an `instance` key which refers to an `ec2` section in the host configuration.
-
-### docker
-
-TBD
