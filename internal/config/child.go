@@ -25,6 +25,10 @@ type ChildConfig struct {
 		ChildCommonConfig
 		Instance string
 	}
+	Shell struct {
+		ChildCommonConfig
+		Command string
+	}
 }
 
 func (cc *ChildConfig) Common() *ChildCommonConfig {
@@ -33,6 +37,8 @@ func (cc *ChildConfig) Common() *ChildCommonConfig {
 		return &cc.Cd.ChildCommonConfig
 	case "ssh":
 		return &cc.Ssh.ChildCommonConfig
+	case "shell":
+		return &cc.Shell.ChildCommonConfig
 	case "ec2":
 		return &cc.Ec2.ChildCommonConfig
 	default:
@@ -54,6 +60,8 @@ func LoadChildConfig(filename string) (*ChildConfig, error) {
 		config.Type = "cd"
 	} else if config.Ssh.Host != "" {
 		config.Type = "ssh"
+	} else if config.Shell.Command != "" {
+		config.Type = "shell"
 	} else if config.Ec2.Instance != "" {
 		config.Type = "ec2"
 	} else {

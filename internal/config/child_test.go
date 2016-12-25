@@ -40,3 +40,19 @@ func TestSimpleConfig(t *testing.T) {
 		t.Errorf("config.Common pointer is wrong")
 	}
 }
+
+func TestShellConfig(t *testing.T) {
+	config, err := loadTestChildConfig("[shell]\ncommand = echo a b c\n")
+	if err != nil {
+		t.Log(err)
+		t.FailNow()
+	}
+
+	if config.Type != "shell" || config.Shell.Command != "echo a b c" {
+		t.Errorf("That came out wrong: %#v", config)
+	}
+
+	if config.Common() != &config.Shell.ChildCommonConfig {
+		t.Errorf("config.Common pointer is wrong")
+	}
+}

@@ -149,3 +149,7 @@ The `ssh` child type requires a `host` key which refers to an `ssh` section in t
 ### ec2
 
 The `ec2` child type requires an `instance` key which refers to an `ec2` section in the host configuration.
+
+### shell
+
+The `shell` child type requires a `command` key which refers to a shell (`/bin/sh`) command to run.
