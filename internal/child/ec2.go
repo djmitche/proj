@@ -142,6 +142,9 @@ statePoll:
 			}
 			startCalled = true
 
+			// wait a beat for EC2 to realize that it's not stopped anymore
+			time.Sleep(2 * time.Second)
+
 		case "terminated":
 			return fmt.Errorf("Instance is terminated")
 		}
