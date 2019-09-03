@@ -2,15 +2,17 @@ package child
 
 import (
 	"fmt"
+	"log"
+	"net"
+	"strings"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/djmitche/proj/internal/config"
 	"github.com/djmitche/proj/internal/ssh"
-	"log"
-	"net"
-	"time"
 )
 
 func setupEc2(ec2HostConfig *config.Ec2HostConfig, childConfig *config.ChildConfig) (*ec2.EC2, error) {
@@ -63,6 +65,46 @@ func findInstance(ec2HostConfig *config.Ec2HostConfig, svc *ec2.EC2) (*ec2.Insta
 	return resp.Reservations[0].Instances[0], nil
 }
 
+// Get the instance address, optionally re-calling fetchInstance in case the instance data does
+// not contain an address.
+func instanceAddress(_instance *ec2.Instance, ec2HostConfig *config.Ec2HostConfig, svc *ec2.EC2) (instance *ec2.Instance, address string, err error) {
+	instance = _instance
+	instance, address, err = _getInstanceAddress(instance)
+	if err != nil {
+		instance, err = findInstance(ec2HostConfig, svc)
+		if err != nil {
+			return
+		}
+	}
+	instance, address, err = _getInstanceAddress(instance)
+	return
+}
+
+func _getInstanceAddress(_instance *ec2.Instance) (instance *ec2.Instance, address string, err error) {
+	instance = _instance
+	err = nil
+
+	// first try for an Ipv6 address
+	for _, netif := range instance.NetworkInterfaces {
+		for _, ipv6 := range netif.Ipv6Addresses {
+			if ipv6.Ipv6Address != nil {
+				log.Printf("Found IPv6 address %s", *ipv6.Ipv6Address)
+				address = *ipv6.Ipv6Address
+				return
+			}
+		}
+	}
+
+	if instance.PublicIpAddress != nil {
+		log.Printf("Found IPv4 address %s", *instance.PublicIpAddress)
+		address = *instance.PublicIpAddress
+		return
+	}
+
+	err = fmt.Errorf("No public addresses found")
+	return
+}
+
 func startInstance(ec2HostConfig *config.Ec2HostConfig, instance *ec2.Instance, svc *ec2.EC2) error {
 	startCalled := false
 	instanceId := *instance.InstanceId
@@ -107,18 +149,23 @@ statePoll:
 
 	// wait for SSH port to be open, too
 	for {
-		// re-search for the instance, since it probably didn't have a public ip address
-		// when it was disconnected -- TODO refactor
-		if instance.PublicIpAddress == nil {
-			var err error
-			instance, err = findInstance(ec2HostConfig, svc)
-			if err != nil {
-				return fmt.Errorf("while searcihng for running instance: %s", err)
-			}
-		}
-		conn, err := net.Dial("tcp", fmt.Sprintf("%s:22", *instance.PublicIpAddress))
+		var err error
+		var address string
+
+		instance, address, err = instanceAddress(instance, ec2HostConfig, svc)
 		if err != nil {
-			log.Printf("connecting to port 22: %s; retrying", err)
+			return fmt.Errorf("Could not get instance address: %s", err)
+		}
+
+		var hostport string
+		if strings.ContainsRune(address, ':') {
+			hostport = fmt.Sprintf("[%s]:22", address)
+		} else {
+			hostport = fmt.Sprintf("%s:22", address)
+		}
+		conn, err := net.Dial("tcp", hostport)
+		if err != nil {
+			log.Printf("connecting to %s:22: %s; retrying", address, err)
 			time.Sleep(time.Second / 2)
 		} else {
 			conn.Close()
@@ -172,15 +219,12 @@ func ec2Child(info *childInfo) error {
 		return fmt.Errorf("while starting instance: %s", err)
 	}
 
-	// re-fetch the instance to get an IP address
-	if instance.PublicIpAddress == nil {
-		instance, err = findInstance(ec2HostConfig, svc)
-		if err != nil {
-			return fmt.Errorf("while searcihng for running instance: %s", err)
-		}
+	instance, address, err := instanceAddress(instance, ec2HostConfig, svc)
+	if err != nil {
+		return fmt.Errorf("Could not get instance address: %s", err)
 	}
 
-	return ssh.Run(*instance.PublicIpAddress, &ec2HostConfig.SshCommonConfig, info.path)
+	return ssh.Run(address, &ec2HostConfig.SshCommonConfig, info.path)
 }
 
 func init() {
