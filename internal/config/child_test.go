@@ -56,3 +56,19 @@ func TestShellConfig(t *testing.T) {
 		t.Errorf("config.Common pointer is wrong")
 	}
 }
+
+func TestAliasConfig(t *testing.T) {
+	config, err := loadTestChildConfig("[alias]\ntarget = jump/foo\n")
+	if err != nil {
+		t.Log(err)
+		t.FailNow()
+	}
+
+	if config.Type != "alias" || config.Alias.Target != "jump/foo" {
+		t.Errorf("That came out wrong: %#v", config)
+	}
+
+	if config.Common() != &config.Alias.ChildCommonConfig {
+		t.Errorf("config.Common pointer is wrong")
+	}
+}

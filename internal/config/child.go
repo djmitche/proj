@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+
 	"gopkg.in/gcfg.v1"
 )
 
@@ -16,6 +17,10 @@ type ChildConfig struct {
 	Cd struct {
 		ChildCommonConfig
 		Dir string
+	}
+	Alias struct {
+		ChildCommonConfig
+		Target string
 	}
 	Ssh struct {
 		ChildCommonConfig
@@ -35,6 +40,8 @@ func (cc *ChildConfig) Common() *ChildCommonConfig {
 	switch cc.Type {
 	case "cd":
 		return &cc.Cd.ChildCommonConfig
+	case "alias":
+		return &cc.Alias.ChildCommonConfig
 	case "ssh":
 		return &cc.Ssh.ChildCommonConfig
 	case "shell":
@@ -58,6 +65,8 @@ func LoadChildConfig(filename string) (*ChildConfig, error) {
 	// each type having a mandatory, distinct key.
 	if config.Cd.Dir != "" {
 		config.Type = "cd"
+	} else if config.Alias.Target != "" {
+		config.Type = "alias"
 	} else if config.Ssh.Host != "" {
 		config.Type = "ssh"
 	} else if config.Shell.Command != "" {

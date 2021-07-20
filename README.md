@@ -142,6 +142,15 @@ The following keys are optional for all child types
 
 The `cd` child type requires a `dir` key giving the directory of the child project.
 
+### alias
+
+The `alias` child type requires a `target` key giving the path to which this path should alias.
+This child type functions like a symlink.
+For example, for projects that must be reached by a jumphost, define the jumphost as child `jump`, and then alias project `myproject` as
+
+    [alias]
+    target = jump/myproject
+
 ### ssh
 
 The `ssh` child type requires a `host` key which refers to an `ssh` section in the host configuration file.
