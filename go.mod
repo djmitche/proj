@@ -6,6 +6,7 @@ retract (
     v1.4.0
     v1.4.1
     v1.4.2
+    v1.4.3
 )
 
 require (
