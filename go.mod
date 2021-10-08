@@ -2,6 +2,9 @@ module github.com/djmitche/proj
 
 go 1.16
 
+retract 1.4.0
+retract 1.4.1
+
 require (
 	github.com/aws/aws-sdk-go v1.40.4
 	github.com/djmitche/shquote v0.0.0-20151208190417-c04fd6eb8242
