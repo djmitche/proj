@@ -1,0 +1,140 @@
+#! /usr/bin/env bash
+
+PROJ_BIN=$(realpath "$0")
+
+## Public API for use from .proj/*.sh
+
+# Recursively call proj with the given path $1.
+function proj::recurse() {
+    local path="${1}"
+    _proj::log exec "'${PROJ_BIN}" "'${path}'"
+    main "${path}" || exit 1
+}
+
+# Change to directory $1 and recurse to the remainder.
+function proj::cd() {
+    local dir="${1}"
+    if [ -z "${dir}" ]; then
+        _proj::bail "No directory given to proj::cd"
+    fi
+
+    _proj::log "cd to ${dir} from ${PWD}"
+    cd "${dir}" || exit 1
+    proj::recurse "${remainder}"
+}
+
+# SSH to a host and run proj on the target host with the remaining path.
+#  - host $1,
+function proj::ssh() {
+    local host="${1}"
+
+    # TODO: support user
+    # TODO: support forward_agent
+    # TODO: support ignore_known_hosts
+    # TODO: support proj_port
+
+    exec ssh -t "${host}" proj "${remainder}"
+}
+
+# Start an EC2 host and SSH to it.
+#  - host $1,
+#  - using aws config $2,
+#  - in aws region $3,
+#  - with instance ID $4
+function proj::ec2-ssh() {
+    local instance_hostname="${1}"
+    local aws_config="${2}"
+    local aws_region="${3}"
+    local instance_id="${4}"
+
+    state=unknown
+    while true; do
+        # Use the SSH port to see if the instance is running.
+        echo "Trying ssh to $instance_hostname"
+
+        # Be more forgiving of timeouts if we have observed the host in the
+        # "running" state.
+        if [ "${state}" = "running" ]; then
+            timeout=5
+        else
+            timeout=1
+        fi
+
+        if ssh -oConnectTimeout=$timeout $instance_hostname true >/dev/null 2>/dev/null; then
+            echo "$instance_hostname is accesible"
+            proj::ssh "${instance_hostname}"
+        fi
+
+        # Try to start the instance
+        echo "Starting EC2 instance $instance_hostname ($instance_id)"
+        awsjson=$(aws --profile $aws_config --region $aws_region ec2 start-instances --instance-ids $instance_id)
+        if [ $? = 0 ]; then
+            state=$(echo "${awsjson}" | jq -r .StartingInstances[0].CurrentState.Name)
+        else
+            awsjson=$(aws --profile $aws_config --region $aws_region ec2 describe-instances --instance-ids $instance_id)
+            state=$(echo "${awsjson}" | jq -r .Reservations[0].Instances[0].State.Name)
+        fi
+        echo "Current instance state: $state"
+    done
+}
+
+## Helpers
+
+function _proj::log() {
+    echo "${@}" >&2
+}
+
+function _proj::bail() {
+    _proj::log "${@}"
+    exit 1
+}
+
+function _proj::shell() {
+    local rcfile
+    local dir="${PWD}"
+
+    while [ "${dir}" != "/" ]; do
+        echo $dir
+        if [ -f "${dir}/.projrc" ]; then
+            rcfile="${dir}/.projrc"
+            break
+        fi
+        dir=$(dirname "${dir}")
+    done
+
+    if [ -n "${rcfile}" ]; then
+        exec "${SHELL}" --rcfile "${rcfile}" -i
+    else
+        exec "${SHELL}" -i
+    fi
+}
+
+function main() {
+    local path="${1:-DEFAULT}"
+
+    local path_elt="${path%%/*}"
+    local remainder="${path#${path_elt}}"
+    remainder="${remainder#/}"
+    _proj::log "Parsed ${path} as ${path_elt} / ${remainder}"
+
+    # Determine how to handle path_elt
+    local proj_cfg=".proj/${path_elt}.sh"
+
+    if [ -f "${proj_cfg}" ]; then
+        source "${proj_cfg}" || exit 1
+    fi
+
+    if [ -d "${path_elt}" ]; then
+        proj::cd "${path_elt}"
+    fi
+
+    # Default to starting a shell.
+    if [ "${path_elt}" == "DEFAULT" ]; then
+        _proj::log "starting a shell in ${PWD}"
+        _proj::shell
+    else
+        _proj::bail "Proj path element ${path_elt} not found" >&2
+    fi
+}
+
+main "${@}"

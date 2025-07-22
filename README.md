@@ -8,6 +8,7 @@ Access projects in their appropriate development environments, quickly and easil
 Features:
 
   * Automatically start and connect to Amazon EC2 instances
+  * Apply configuration for each project
 
 # Overview
 
@@ -44,6 +45,8 @@ Note that this does *not* pass the `-l` option to indicate a login shell.
 It is up to `.projrc` to emulate this behavior by sourcing the appropriate files, if desired.
 
 # Configuration
+
+TODO: update for shell
 
 ## Host-level
 
